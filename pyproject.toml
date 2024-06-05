@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ito demo"
+version = "0.1.0"
+description = ""
+authors = ["wufukevin <wufukevin@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flask = "^3.0.3"
+pygame = "^2.5.2"
+panda3d = "^1.10.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
