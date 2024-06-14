@@ -12,7 +12,7 @@ class Chess(pygame.sprite.Sprite):
     def __init__(self, x, y) -> None:
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface([x, y])
-        self.image.fill((90,90,90))
+        self.image.fill((90, 90, 90))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -40,8 +40,8 @@ class Map():
         x = []
         for i in range(self.w):
             for j in range(self.h):
-                if (i+j) % 2 == 1:
-                    x.append((i*self.cell_w, j*self.cell_h))
+                if (i + j) % 2 == 1:
+                    x.append((i * self.cell_w, j * self.cell_h))
         for loc in x:
             window_surface.blit(self.area, loc)
 
@@ -65,9 +65,8 @@ clock = pygame.time.Clock()
 # window_surface.blit(text_surface, (10, 10))
 
 map = Map(12, 12)
-c = Chess(100,100)
+c = Chess(100, 100)
 window_surface.blit(c.image, c.rect)
-
 
 # 更新畫面，等所有操作完成後一次更新（若沒更新，則元素不會出現）
 pygame.display.update()

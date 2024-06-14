@@ -1,0 +1,8 @@
+app:
+  resource_path: "resources"
+  screen:
+    width: 800
+    height: 600
+    title: "ITB"
+  game:
+    tiles: 10
