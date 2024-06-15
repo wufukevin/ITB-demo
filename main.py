@@ -21,7 +21,7 @@ class Chess(pygame.sprite.Sprite):
         self.rect.y = y
 
 
-class Map():
+class Map:
     def __init__(self, w, h) -> None:
         self.w = w
         self.h = h
@@ -62,12 +62,12 @@ clock = pygame.time.Clock()
 # # blit 用來把其他元素渲染到另外一個 surface 上，這邊是 window 視窗
 # window_surface.blit(text_surface, (10, 10))
 
-map = Map(app_config.app.game.tiles, app_config.app.game.tiles)
-c = Chess(100, 100)
-window_surface.blit(c.image, c.rect)
+# map = Map(app_config.app.game.tiles, app_config.app.game.tiles)
+# c = Chess(100, 100)
+# window_surface.blit(c.image, c.rect)
 
 # 更新畫面，等所有操作完成後一次更新（若沒更新，則元素不會出現）
-pygame.display.update()
+# pygame.display.update()
 
 # 事件迴圈監聽事件，進行事件處理
 while True:
@@ -79,7 +79,7 @@ while True:
             sys.exit()
 
     # window_surface.fill(bg_color)
-    window_surface.blit(c.image, c.rect)
+    # window_surface.blit(c.image, c.rect)
 
     clock.tick(app_config.app.game.fps)  # 控制循环刷新频率,每秒刷新FPS对应的值的次数
-    pygame.display.update()
+    # pygame.display.update()
