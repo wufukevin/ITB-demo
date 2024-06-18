@@ -1,59 +1,26 @@
 import sys
 
 import pygame
+from pygame import Color
 from pygame.locals import QUIT
 
 from config.loader import app_config
-
-
-class Chess(pygame.sprite.Sprite):
-    def __init__(self, x, y) -> None:
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([x, y])
-        self.image.fill((90, 90, 90))
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        pass
-
-    def moveTo(self, x, y):
-        self.rect.x = x
-        self.rect.y = y
-
-
-class Map:
-    def __init__(self, w, h) -> None:
-        self.w = w
-        self.h = h
-        self.cell_w = app_config.app.screen.width / w
-        self.cell_h = app_config.app.screen.height / h
-        self.area = pygame.Surface((self.cell_w, self.cell_h))
-        self.area_color = (50, 50, 50)
-        self.area.fill(self.area_color)
-
-        self.draeCheckerBoard()
-        pass
-
-    def draeCheckerBoard(self):
-        x = []
-        for i in range(self.w):
-            for j in range(self.h):
-                if (i + j) % 2 == 1:
-                    x.append((i * self.cell_w, j * self.cell_h))
-        for loc in x:
-            window_surface.blit(self.area, loc)
-
+from game.map import Map
 
 # 初始化
 pygame.init()
 # 建立 window 視窗畫布
-window_surface = pygame.display.set_mode((app_config.app.screen.width, app_config.app.screen.height))
-# 設置視窗標題為 Hello World:)
-pygame.display.set_caption(app_config.app.game.title)
+window_surface = pygame.display.set_mode((app_config.app.screen.width, app_config.app.screen.height), pygame.SCALED)
+# 設置視窗標題
+pygame.display.set_caption(app_config.app.screen.title)
 # 清除畫面並填滿背景色
-window_surface.fill((255, 255, 255))
+window_surface.fill(Color("black"))
 
 clock = pygame.time.Clock()
+
+# game_screen = pygame.sprite.LayeredUpdates()
+# game_screen.add([Unit(Tile(x=0, y=0), UnitLayer.Terrain)])
+game_map = Map(window_surface)
 
 # # 宣告 font 文字物件
 # head_font = pygame.font.SysFont(None, 60)
@@ -78,8 +45,7 @@ while True:
             pygame.quit()
             sys.exit()
 
-    # window_surface.fill(bg_color)
-    # window_surface.blit(c.image, c.rect)
+    game_map.show()
 
     clock.tick(app_config.app.game.fps)  # 控制循环刷新频率,每秒刷新FPS对应的值的次数
-    # pygame.display.update()
+    pygame.display.update()

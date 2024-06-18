@@ -2,8 +2,10 @@ app:
   screen:
     width: 600
     height: 600
-    title: "ITB"
-  game:
     title: "ITB Demo!!"
-    tiles: 10
+  game:
+    tiles: {
+      width: 10,
+      height: 10
+    }
     fps: 60
