@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import ClassVar
 
 import pygame
 from pydantic import BaseModel, field_validator
@@ -14,6 +15,8 @@ class UnitLayer(Enum):
 
 
 class Tile(BaseModel):
+    __width: ClassVar[float] = app_config.screen.width / app_config.game.tiles.width
+    __height: ClassVar[float] = app_config.screen.height / app_config.game.tiles.height
     x: int
     y: int
     padding: int = 0
@@ -36,17 +39,9 @@ class Tile(BaseModel):
             raise ValueError('y out of range')
         return v
 
-    @staticmethod
-    def width():
-        return app_config.screen.width / app_config.game.tiles.width
-
-    @staticmethod
-    def height():
-        return app_config.screen.height / app_config.game.tiles.height
-
     def get_rect(self) -> Rect:
-        return pygame.Rect(self.x * Tile.width(), self.y * Tile.height(), Tile.width(),
-                           Tile.height())
+        return pygame.Rect(self.x * self.__width, self.y * self.__height, self.__width,
+                           self.__height)
 
     @property
     def left(self) -> float:
@@ -66,15 +61,17 @@ class Tile(BaseModel):
 
 
 class Unit(pygame.sprite.Sprite):
+    __bg_color = Color('white')
+    __boarder_color = Color('black')
 
     def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Terrain):
         pygame.sprite.Sprite.__init__(self)
-        self.tile = tile
-        self.rect = self.tile.get_rect()
+        self.__tile = tile
+        self.rect = self.__tile.get_rect()
         self.image = pygame.Surface(self.rect.size)
         self.layer = layer.value
 
     def update(self):
-        self.image.fill(Color("white"))
-        self.rect.update(self.tile.get_rect())
-        pygame.draw.rect(self.image, Color("black"), self.image.get_rect(), 1)
+        self.image.fill(self.__bg_color)
+        self.rect.update(self.__tile.get_rect())
+        pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)
