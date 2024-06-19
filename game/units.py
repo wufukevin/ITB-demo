@@ -40,8 +40,9 @@ class Tile(BaseModel):
         return v
 
     def get_rect(self) -> Rect:
-        return pygame.Rect(self.x * self.__width, self.y * self.__height, self.__width,
-                           self.__height)
+        return pygame.Rect(self.x * self.__width + self.padding, self.y * self.__height + self.padding,
+                           self.__width - self.padding * 2,
+                           self.__height - self.padding * 2)
 
     @property
     def left(self) -> float:
