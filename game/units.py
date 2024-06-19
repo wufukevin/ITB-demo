@@ -9,9 +9,14 @@ from config.loader import app_config
 
 
 class UnitLayer(Enum):
+    Background = -1
     Terrain = 0
     Character = 1
     Effect = 2
+
+    @staticmethod
+    def selectable_layers():
+        return [UnitLayer.Terrain, UnitLayer.Character]
 
 
 class Tile(BaseModel):
@@ -65,7 +70,7 @@ class Unit(pygame.sprite.Sprite):
     __bg_color = Color('white')
     __boarder_color = Color('black')
 
-    def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Terrain):
+    def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Background):
         pygame.sprite.Sprite.__init__(self)
         self.__tile = tile
         self.rect = self.__tile.get_rect()

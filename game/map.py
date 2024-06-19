@@ -13,15 +13,17 @@ class Map:
         self.__background = pygame.sprite.LayeredUpdates()
         for x in range(app_config.game.tiles.width):
             for y in range(app_config.game.tiles.height):
-                self.__background.add(Unit(Tile(x=x, y=y), UnitLayer.Terrain))
+                self.__background.add(Unit(Tile(x=x, y=y), UnitLayer.Background))
 
     def __getitem__(self, item) -> Unit:
         x, y = item
-        return self.__background.get_sprites_at(Tile(x=x, y=y).get_rect().size)[-1]
+        units = [unit for unit in self.__background.get_sprites_at(Tile(x=x, y=y).get_rect().size) if
+                 unit.layer in UnitLayer.selectable_layers()]
+        return units[-1] if len(units) else None
 
     def show(self):
         self.__background.update()
         self.__background.draw(self.__surface)
 
-    def add(self, units: Sequence[Unit]):
-        self.__background.add(units)
+    def add(self, units: Sequence[Unit], **kwargs):
+        self.__background.add(units, **kwargs)
