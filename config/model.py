@@ -12,9 +12,13 @@ class Screen(BaseModel):
     title: str
 
 
+class Tiles(BaseModel):
+    width: int
+    height: int
+
+
 class Game(BaseModel):
-    title: str
-    tiles: int
+    tiles: Tiles
     fps: int
 
 
