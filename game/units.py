@@ -72,12 +72,12 @@ class Unit(pygame.sprite.Sprite):
 
     def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Background):
         pygame.sprite.Sprite.__init__(self)
-        self.__tile = tile
-        self.rect = self.__tile.get_rect()
+        self.tile = tile
+        self.rect = self.tile.get_rect()
         self.image = pygame.Surface(self.rect.size)
         self.layer = layer.value
 
     def update(self):
         self.image.fill(self.__bg_color)
-        self.rect.update(self.__tile.get_rect())
+        self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)
