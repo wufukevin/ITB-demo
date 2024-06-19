@@ -1,8 +1,9 @@
 app:
-  resource_path: "resources"
   screen:
-    width: 800
+    width: 600
     height: 600
     title: "ITB"
   game:
+    title: "ITB Demo!!"
     tiles: 10
+    fps: 60
