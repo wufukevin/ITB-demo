@@ -1,9 +1,8 @@
 import pathlib
 
 from pydantic_yaml import parse_yaml_file_as
-from pygame import Vector2
 
-from .model import Config
+from .model import Config, App, Game, Screen
 
 
 class AppConfig:
@@ -11,15 +10,15 @@ class AppConfig:
         self.config = parse_yaml_file_as(Config, pathlib.Path(__file__).parent / "config.yaml")
 
     @property
-    def app(self):
+    def app(self) -> App:
         return self.config.app
 
     @property
-    def game(self):
+    def game(self) -> Game:
         return self.config.app.game
 
     @property
-    def screen(self):
+    def screen(self) -> Screen:
         return self.config.app.screen
 
 
