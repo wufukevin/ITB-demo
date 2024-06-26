@@ -81,3 +81,17 @@ class Unit(pygame.sprite.Sprite):
         self.image.fill(self.__bg_color)
         self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)
+
+
+class Character(Unit):
+    __bg_color = Color('blue')
+    __boarder_color = Color('black')
+
+    def __init__(self, tile=Tile(x=0, y=0)):
+        print('init a character')
+        super().__init__(tile=tile, layer=UnitLayer.Character)
+
+    def update(self):
+        self.image.fill(self.__bg_color)
+        self.rect.update(self.tile.get_rect())
+        pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)

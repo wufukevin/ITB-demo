@@ -6,6 +6,7 @@ from pygame.locals import QUIT
 
 from config.loader import app_config
 from game.map import Map
+from game.units import Character, Tile
 
 # 初始化
 pygame.init()
@@ -21,6 +22,8 @@ clock = pygame.time.Clock()
 # game_screen = pygame.sprite.LayeredUpdates()
 # game_screen.add([Unit(Tile(x=0, y=0), UnitLayer.Terrain)])
 game_map = Map(window_surface)
+
+game_map.add([Character(Tile(x=1, y=1))])
 
 # # 宣告 font 文字物件
 # head_font = pygame.font.SysFont(None, 60)
