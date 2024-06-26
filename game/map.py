@@ -18,7 +18,7 @@ class Map:
     def __getitem__(self, item) -> Unit:
         x, y = item
         units = [unit for unit in self.__background.get_sprites_at(Tile(x=x, y=y).get_rect().size) if
-                 unit.layer in UnitLayer.selectable_layers()]
+                 UnitLayer(unit.layer) in UnitLayer.selectable_layers()]
         return units[-1] if len(units) else None
 
     def show(self):

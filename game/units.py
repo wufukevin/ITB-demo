@@ -88,7 +88,6 @@ class Character(Unit):
     __boarder_color = Color('black')
 
     def __init__(self, tile=Tile(x=0, y=0)):
-        print('init a character')
         super().__init__(tile=tile, layer=UnitLayer.Character)
 
     def update(self):
