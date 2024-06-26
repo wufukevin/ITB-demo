@@ -20,8 +20,8 @@ class UnitLayer(Enum):
 
 
 class Tile(BaseModel):
-    __width: ClassVar[float] = app_config.screen.width / app_config.game.tiles.width
-    __height: ClassVar[float] = app_config.screen.height / app_config.game.tiles.height
+    width: ClassVar[float] = app_config.screen.width / app_config.game.tiles.width
+    height: ClassVar[float] = app_config.screen.height / app_config.game.tiles.height
     x: int
     y: int
     padding: int = 0
@@ -45,9 +45,9 @@ class Tile(BaseModel):
         return v
 
     def get_rect(self) -> Rect:
-        return pygame.Rect(self.x * self.__width + self.padding, self.y * self.__height + self.padding,
-                           self.__width - self.padding * 2,
-                           self.__height - self.padding * 2)
+        return pygame.Rect(self.x * self.width + self.padding, self.y * self.height + self.padding,
+                           self.width - self.padding * 2,
+                           self.height - self.padding * 2)
 
     @property
     def left(self) -> float:
@@ -67,8 +67,8 @@ class Tile(BaseModel):
 
 
 class Unit(pygame.sprite.Sprite):
-    __bg_color = Color('white')
-    __boarder_color = Color('black')
+    bg_color = Color('white')
+    boarder_color = Color('black')
 
     def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Background):
         pygame.sprite.Sprite.__init__(self)
@@ -78,32 +78,24 @@ class Unit(pygame.sprite.Sprite):
         self.layer = layer.value
 
     def update(self):
-        self.image.fill(self.__bg_color)
+        self.image.fill(self.bg_color)
         self.rect.update(self.tile.get_rect())
-        pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)
+        pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
 
 class Character(Unit):
-    __bg_color = Color('blue')
-    __boarder_color = Color('black')
+    bg_color = Color('blue')
+    boarder_color = Color('black')
 
     def __init__(self, tile=Tile(x=0, y=0)):
         super().__init__(tile=tile, layer=UnitLayer.Character)
 
-    def update(self):
-        self.image.fill(self.__bg_color)
-        self.rect.update(self.tile.get_rect())
-        pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)
-
     def update_pos(self, tile: Tile):
         self.unselected()
         self.tile = tile
-        self.update()
 
     def selected(self):
-        self.__bg_color = Color('red')
-        self.update()
+        self.bg_color = Color('red')
 
     def unselected(self):
-        self.__bg_color = Color('blue')
-        self.update()
+        self.bg_color = Color('blue')
