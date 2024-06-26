@@ -1,13 +1,7 @@
 from enum import Enum
-
 import pygame
-
-from config.loader import app_config
 from game.map import Map
 from game.units import Unit, Character, Tile
-
-each_tile_width = app_config.app.screen.width / app_config.app.game.tiles.width
-each_tile_height = app_config.app.screen.height / app_config.app.game.tiles.height
 
 
 class Situation(Enum):
@@ -16,61 +10,67 @@ class Situation(Enum):
     MOVING = 3
 
 
-situation = Situation.NOTHING
-selected_unit = None
+class EventHandler:
+    _instance = None
+    situation = Situation.NOTHING
+    selected_unit = None
 
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
-class ClickEvent:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    @classmethod
-    def execute(self):
+    def __init__(self):
         pass
 
+    class ClickEvent:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
-class Select(ClickEvent):
-    def __init__(self, unit: Unit):
-        ClickEvent.__init__(self, unit.tile.x, unit.tile.y)
-        self.unit = unit
+        @classmethod
+        def execute(self):
+            pass
 
-    def execute(self):
-        global selected_unit
-        # check type of selected_unit
-        if type(selected_unit) is Character:
-            selected_unit.unselected()
+    class Select(ClickEvent):
+        def __init__(self, unit: Unit):
+            EventHandler.ClickEvent.__init__(self, unit.tile.x, unit.tile.y)
+            self.unit = unit
 
-        selected_unit = self.unit
+        def execute(self):
+            # check type of selected_unit
+            if type(EventHandler.selected_unit) is Character:
+                EventHandler.selected_unit.unselected()
 
-        if type(selected_unit) is Character:
-            selected_unit.selected()
+            EventHandler.selected_unit = self.unit
 
+            if type(EventHandler.selected_unit) is Character:
+                EventHandler.selected_unit.selected()
 
-class Move(ClickEvent):
-    def __init__(self, x, y):
-        ClickEvent.__init__(self, x, y)
+    class Move(ClickEvent):
+        def __init__(self, x, y):
+            EventHandler.ClickEvent.__init__(self, x, y)
 
-    def execute(self):
-        global selected_unit
-        global situation
-        if type(selected_unit) is Character:
-            selected_unit.update_pos(Tile(x=self.x, y=self.y))
-        situation = Situation.NOTHING
-        selected_unit = None
+        def execute(self):
+            if type(EventHandler.selected_unit) is Character:
+                EventHandler.selected_unit.update_pos(Tile(x=self.x, y=self.y))
+            EventHandler.situation = Situation.NOTHING
+            EventHandler.selected_unit = None
 
+    def click(self, game_map: Map):
+        x, y = pygame.mouse.get_pos()
+        tile_x, tile_y = int(x / Tile.width), int(y / Tile.height)
+        click_event = self.get_click_event(game_map, tile_x, tile_y)
+        click_event.execute()
 
-def click(game_map: Map):
-    global situation
-    x, y = pygame.mouse.get_pos()
-    x1, y1 = int(x / each_tile_width), int(y / each_tile_height)
-    click_event = ClickEvent(x1, y1)
-    click_result = game_map[(x1, y1)]
-    if click_result:
-        situation = Situation.SELECTED
-        click_event = Select(click_result)
-    else:
-        if situation == Situation.SELECTED:
-            situation = Situation.MOVING
-            click_event = Move(x1, y1)
-    click_event.execute()
+    def get_click_event(self, game_map, tile_x, tile_y):
+        click_event = EventHandler.ClickEvent(tile_x, tile_y)
+        click_result = game_map[(tile_x, tile_y)]
+        if click_result:
+            self.situation = Situation.SELECTED
+            click_event = EventHandler.Select(click_result)
+        else:
+            if self.situation == Situation.SELECTED:
+                self.situation = Situation.MOVING
+                click_event = EventHandler.Move(tile_x, tile_y)
+        return click_event
