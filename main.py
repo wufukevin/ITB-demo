@@ -4,6 +4,7 @@ import pygame
 from pygame import Color, MOUSEBUTTONDOWN
 from pygame.locals import QUIT
 
+from events import click
 from config.loader import app_config
 from game.map import Map
 from game.units import Character, Tile
@@ -24,6 +25,7 @@ clock = pygame.time.Clock()
 game_map = Map(window_surface)
 
 game_map.add([Character(Tile(x=1, y=1))])
+game_map.add([Character(Tile(x=2, y=2))])
 
 # # 宣告 font 文字物件
 # head_font = pygame.font.SysFont(None, 60)
@@ -38,22 +40,13 @@ game_map.add([Character(Tile(x=1, y=1))])
 
 # 更新畫面，等所有操作完成後一次更新（若沒更新，則元素不會出現）
 # pygame.display.update()
-each_tile_width = app_config.app.screen.width / app_config.app.game.tiles.width
-each_tile_height = app_config.app.screen.height / app_config.app.game.tiles.height
-
-def click():
-    x, y = pygame.mouse.get_pos()
-    x1, y1 = int(x/each_tile_width), int(y/each_tile_height)
-    print(x1, y1)
-    print(game_map[(x1, y1)])
-
 
 # 事件迴圈監聽事件，進行事件處理
 while True:
     # 迭代整個事件迴圈，若有符合事件則對應處理
     for event in pygame.event.get():
         if event.type == MOUSEBUTTONDOWN:
-            click()
+            click(game_map)
         # 當使用者結束視窗，程式也結束
         if event.type == QUIT:
             pygame.quit()

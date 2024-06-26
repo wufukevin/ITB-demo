@@ -94,3 +94,16 @@ class Character(Unit):
         self.image.fill(self.__bg_color)
         self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.__boarder_color, self.image.get_rect(), 1)
+
+    def update_pos(self, tile: Tile):
+        self.unselected()
+        self.tile = tile
+        self.update()
+
+    def selected(self):
+        self.__bg_color = Color('red')
+        self.update()
+
+    def unselected(self):
+        self.__bg_color = Color('blue')
+        self.update()
