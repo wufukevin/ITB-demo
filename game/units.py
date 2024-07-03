@@ -95,15 +95,51 @@ class Character(Unit):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
+    is_moving = False
+    move_fps = 30
+    fps_count = 0
+    move_path = []
 
-    def __init__(self, tile=Tile(x=0, y=0), move_distance=2):
+    def __init__(self, tile=Tile(x=0, y=0), move_distance=3):
         super().__init__(tile=tile, layer=UnitLayer.Character)
         self.move_distance = move_distance
+
+    def update(self):
+        Unit.update(self)
+        self.fps_count += 1
+        if self.fps_count == self.move_fps:
+            self.fps_count = 0
+            if self.move_path:
+                self.tile = self.move_path.pop(0)
+                self.is_moving = True
+            else:
+                self.is_moving = False
+
+    def save_shortest_path(self, tile: Tile):
+        self.move_path = []
+        current_x = self.tile.x
+        current_y = self.tile.y
+        x = tile.x
+        y = tile.y
+        while current_x != x:
+            if current_x < x:
+                current_x += 1
+            else:
+                current_x -= 1
+            self.move_path.append(Tile(x=current_x, y=current_y))
+
+        while current_y != y:
+            if current_y < y:
+                current_y += 1
+            else:
+                current_y -= 1
+            self.move_path.append(Tile(x=current_x, y=current_y))
 
     def update_pos(self, tile: Tile):
         self.unselected()
         if self.is_in_distance(tile.x, tile.y):
-            self.tile = tile
+            self.save_shortest_path(tile)
+            # self.tile = tile
         else:
             print('out of distance')
 

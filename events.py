@@ -46,7 +46,7 @@ class EventHandler:
 
             EventHandler.selected_unit = self.unit
 
-            if type(EventHandler.selected_unit) is Character:
+            if type(EventHandler.selected_unit) is Character and not EventHandler.selected_unit.is_moving:
                 self.game_map.show_move_distance(self.unit)
                 EventHandler.selected_unit.selected()
 
