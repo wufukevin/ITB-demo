@@ -8,6 +8,10 @@ from pygame import Rect, Color
 from config.loader import app_config
 
 
+def manhattan_distance(x1, y1, x2, y2):
+    return abs(x1 - x2) + abs(y1 - y2)
+
+
 class UnitLayer(Enum):
     Background = -1
     Terrain = 0
@@ -69,6 +73,7 @@ class Tile(BaseModel):
 class Unit(pygame.sprite.Sprite):
     bg_color = Color('white')
     boarder_color = Color('black')
+    is_block = False
 
     def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Background):
         pygame.sprite.Sprite.__init__(self)
@@ -82,20 +87,31 @@ class Unit(pygame.sprite.Sprite):
         self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
+    def change_bg_color(self, color: Color):
+        self.bg_color = color
+
 
 class Character(Unit):
     bg_color = Color('blue')
     boarder_color = Color('black')
+    is_block = True
 
-    def __init__(self, tile=Tile(x=0, y=0)):
+    def __init__(self, tile=Tile(x=0, y=0), move_distance=2):
         super().__init__(tile=tile, layer=UnitLayer.Character)
+        self.move_distance = move_distance
 
     def update_pos(self, tile: Tile):
-        self.unselected()
-        self.tile = tile
+        if self.is_in_distance(tile.x, tile.y):
+            self.unselected()
+            self.tile = tile
+        else:
+            print('out of distance')
 
     def selected(self):
         self.bg_color = Color('red')
 
     def unselected(self):
         self.bg_color = Color('blue')
+
+    def is_in_distance(self, x, y):
+        return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
