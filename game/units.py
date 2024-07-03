@@ -101,8 +101,8 @@ class Character(Unit):
         self.move_distance = move_distance
 
     def update_pos(self, tile: Tile):
+        self.unselected()
         if self.is_in_distance(tile.x, tile.y):
-            self.unselected()
             self.tile = tile
         else:
             print('out of distance')
