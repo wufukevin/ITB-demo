@@ -1,11 +1,13 @@
 import sys
 
 import pygame
-from pygame import Color
+from pygame import Color, MOUSEBUTTONDOWN
 from pygame.locals import QUIT
 
+from events import EventHandler
 from config.loader import app_config
 from game.map import Map
+from game.units import Character, Tile
 
 # 初始化
 pygame.init()
@@ -21,6 +23,10 @@ clock = pygame.time.Clock()
 # game_screen = pygame.sprite.LayeredUpdates()
 # game_screen.add([Unit(Tile(x=0, y=0), UnitLayer.Terrain)])
 game_map = Map(window_surface)
+events_handler = EventHandler()
+
+game_map.add([Character(Tile(x=1, y=1))])
+game_map.add([Character(Tile(x=2, y=2))])
 
 # # 宣告 font 文字物件
 # head_font = pygame.font.SysFont(None, 60)
@@ -40,6 +46,8 @@ game_map = Map(window_surface)
 while True:
     # 迭代整個事件迴圈，若有符合事件則對應處理
     for event in pygame.event.get():
+        if event.type == MOUSEBUTTONDOWN:
+            events_handler.click(game_map)
         # 當使用者結束視窗，程式也結束
         if event.type == QUIT:
             pygame.quit()
