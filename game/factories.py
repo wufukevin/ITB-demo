@@ -2,12 +2,15 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import List
 
-from game.units import Unit, Character, Tile, Terrain
+from game.units import Unit, Character, Tile, Terrain, UnitLayer
+from resource.loader import ImageLoader, background_images, character_images
 
 
 class UnitType(Enum):
-    CHARACTER = 1
+    BACKGROUND = 0
+    MOVE_RANGE = 1
     TERRAIN = 2
+    CHARACTER = 3
 
 
 class GameFactory(metaclass=ABCMeta):
@@ -20,25 +23,35 @@ class GameFactory(metaclass=ABCMeta):
         return [self.create_unit(tile) for tile in tiles]
 
 
+class BackgroundFactory(GameFactory):
+
+    def create_unit(self, tile: Tile) -> Unit:
+        return Unit(tile=tile, image=ImageLoader.random_load(background_images))
+
+
+class MoveRangeFactory(GameFactory):
+
+    def create_unit(self, tile: Tile) -> Unit:
+        return Unit(tile=tile, layer=UnitLayer.MoveRange)
+
+
 class CharacterFactory(GameFactory):
 
     def create_unit(self, tile: Tile) -> Unit:
-        return Character(tile=tile)
+        return Character(tile=tile, image=ImageLoader.random_load(character_images))
 
 
 class TerrainFactory(GameFactory):
 
     def create_unit(self, tile: Tile) -> Unit:
-        return Terrain(tile=tile)
+        return Terrain(tile=tile, image=ImageLoader.random_load(background_images))
 
 
-_character_factory = CharacterFactory()
-_terrain_factory = TerrainFactory()
-
-
-def unit_factory(factory_type: UnitType) -> CharacterFactory | TerrainFactory:
+def unit_factory(factory_type: UnitType) -> GameFactory:
     switcher = {
-        UnitType.CHARACTER: _character_factory,
-        UnitType.TERRAIN: _terrain_factory
+        UnitType.CHARACTER: CharacterFactory(),
+        UnitType.TERRAIN: TerrainFactory(),
+        UnitType.BACKGROUND: BackgroundFactory(),
+        UnitType.MOVE_RANGE: MoveRangeFactory()
     }
     return switcher.get(factory_type)

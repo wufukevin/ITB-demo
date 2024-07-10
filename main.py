@@ -4,7 +4,6 @@ import pygame
 from pygame import MOUSEBUTTONDOWN
 from pygame.locals import QUIT
 
-from events import EventHandler
 from config.loader import app_config
 from events import EventHandler
 from game.factories import UnitType

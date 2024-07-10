@@ -8,6 +8,6 @@ app:
       width: 10,
       height: 10
     }
-    character: 2
+    character: 3
     terrain: 10
     fps: 60

@@ -13,13 +13,15 @@ class Map:
     def __init__(self, surface: pygame.Surface):
         self.__unit_generate_count = {
             UnitType.CHARACTER: app_config.game.character,
-            UnitType.TERRAIN: app_config.game.terrain
+            UnitType.TERRAIN: app_config.game.terrain,
         }
         self.__surface = surface
         self.__background = pygame.sprite.LayeredUpdates()
-        for x in range(app_config.game.tiles.width):
-            for y in range(app_config.game.tiles.height):
-                self.__background.add(Unit(Tile(x=x, y=y), UnitLayer.Background))
+        self.add(unit_factory(UnitType.BACKGROUND).generate(self.__background_tiles()))
+
+    @staticmethod
+    def __background_tiles() -> List[Tile]:
+        return [Tile(x=x, y=y) for x in range(app_config.game.tiles.width) for y in range(app_config.game.tiles.height)]
 
     def __getitem__(self, game_coordinate: Tuple[int, int]) -> Unit:
         x, y = game_coordinate
@@ -38,15 +40,13 @@ class Map:
         self.__background.add(units, **kwargs)
 
     def mark_move_range(self, tiles: List[Tile]):
-        for tile in tiles:
-            for unit in self.__background:
-                if UnitLayer(unit.layer) is UnitLayer.Background and unit.tile == tile:
-                    unit.selected()
+        move_ranges = unit_factory(UnitType.MOVE_RANGE).generate(tiles)
+        self.add(move_ranges)
+        for unit in move_ranges:
+            unit.selected()
 
     def remove_move_range(self):
-        for unit in self.__background:
-            if UnitLayer(unit.layer) is UnitLayer.Background:
-                unit.unselected()
+        self.__background.remove_sprites_of_layer(UnitLayer.MoveRange.value)
 
     def remove(self, units: Sequence[pygame.sprite]):
         self.__background.remove(units)

@@ -16,8 +16,9 @@ def manhattan_distance(x1, y1, x2, y2):
 class UnitLayer(Enum):
     Background = -1
     Terrain = 0
-    Character = 1
-    Effect = 2
+    MoveRange = 1
+    Character = 10
+    Effect = 20
 
     @staticmethod
     def selectable_layers():
@@ -79,24 +80,30 @@ class Unit(pygame.sprite.Sprite):
     boarder_color = Color('black')
     is_block = False
 
-    def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Background):
+    def __init__(self, tile: Tile, image: pygame.surface.Surface = None, layer: UnitLayer = UnitLayer.Background):
         pygame.sprite.Sprite.__init__(self)
         self.tile = tile
         self.rect = self.tile.get_rect()
-        self.image = pygame.Surface(self.rect.size)
+        self.image = self.create_plain_image() if image is None else pygame.transform.scale(image, self.rect.size)
+        self.use_plain_image = image is None
         self.layer = layer.value
 
+    def create_plain_image(self):
+        return pygame.Surface(self.rect.size, pygame.SRCALPHA)
+
     def update(self):
-        self.image.fill(self.bg_color)
+        if self.use_plain_image:
+            self.image.fill(self.bg_color)
         self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
     def selected(self):
-        self.bg_color = Color('green')
-        self.bg_color.a = 50
+        if self.use_plain_image:
+            self.bg_color = Color(0, 255, 0, 50)
 
     def unselected(self):
-        self.bg_color = Color('white')
+        if self.use_plain_image:
+            self.bg_color = Color('white')
 
     @abstractmethod
     def move_range(self):
@@ -106,8 +113,8 @@ class Unit(pygame.sprite.Sprite):
 class Terrain(Unit, ABC):
     bg_color = Color('yellow')
 
-    def __init__(self, tile=Tile(x=0, y=0), layer=UnitLayer.Terrain):
-        super().__init__(tile=tile, layer=layer)
+    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, layer=UnitLayer.Terrain):
+        super().__init__(tile=tile, image=image, layer=layer)
 
 
 class Character(Unit, ABC):
@@ -119,8 +126,8 @@ class Character(Unit, ABC):
     fps_count = 0
     move_path = []
 
-    def __init__(self, tile=Tile(x=0, y=0), move_distance=3):
-        super().__init__(tile=tile, layer=UnitLayer.Character)
+    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, move_distance=3):
+        super().__init__(tile=tile, image=image, layer=UnitLayer.Character)
         self.move_distance = move_distance
 
     def update(self):
