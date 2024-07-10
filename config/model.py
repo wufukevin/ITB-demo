@@ -19,6 +19,8 @@ class Tiles(BaseModel):
 
 class Game(BaseModel):
     tiles: Tiles
+    character: int
+    terrain: int
     fps: int
 
 

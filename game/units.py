@@ -1,3 +1,4 @@
+from abc import abstractmethod, ABC
 from enum import Enum
 from typing import ClassVar
 
@@ -69,6 +70,9 @@ class Tile(BaseModel):
     def bottom(self) -> float:
         return self.get_rect().bottom
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
 
 class Unit(pygame.sprite.Sprite):
     bg_color = Color('white')
@@ -87,11 +91,26 @@ class Unit(pygame.sprite.Sprite):
         self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
-    def change_bg_color(self, color: Color):
-        self.bg_color = color
+    def selected(self):
+        self.bg_color = Color('green')
+        self.bg_color.a = 50
+
+    def unselected(self):
+        self.bg_color = Color('white')
+
+    @abstractmethod
+    def move_range(self):
+        pass
 
 
-class Character(Unit):
+class Terrain(Unit, ABC):
+    bg_color = Color('yellow')
+
+    def __init__(self, tile=Tile(x=0, y=0), layer=UnitLayer.Terrain):
+        super().__init__(tile=tile, layer=layer)
+
+
+class Character(Unit, ABC):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
@@ -105,7 +124,7 @@ class Character(Unit):
         self.move_distance = move_distance
 
     def update(self):
-        Unit.update(self)
+        super().update()
         self.fps_count += 1
         if self.fps_count == self.move_fps:
             self.fps_count = 0
@@ -151,3 +170,14 @@ class Character(Unit):
 
     def is_in_distance(self, x, y):
         return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
+
+    def move_range(self):
+        ranges = []
+        for i in range(-self.move_distance, self.move_distance + 1):
+            for j in range(-self.move_distance, self.move_distance + 1):
+                x = self.tile.x + i
+                y = self.tile.y + j
+                if 0 <= x < app_config.game.tiles.width and 0 <= y < app_config.game.tiles.height:
+                    if self.is_in_distance(x, y):
+                        ranges.append(Tile(x=x, y=y))
+        return ranges
