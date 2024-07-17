@@ -156,7 +156,6 @@ class Character(Unit, ABC):
             self.move_path.append(Tile(x=current_x, y=current_y))
 
     def update_pos(self, tile: Tile):
-        self.unselected()
         if self.is_in_distance(tile.x, tile.y):
             self.save_shortest_path(tile)
             # self.tile = tile
