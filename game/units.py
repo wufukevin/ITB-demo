@@ -119,6 +119,7 @@ class Character(Unit, ABC):
     move_fps = 30
     fps_count = 0
     move_path = []
+    reachable_tiles_with_path = []
 
     def __init__(self, tile=Tile(x=0, y=0), move_distance=3):
         super().__init__(tile=tile, layer=UnitLayer.Character)
@@ -135,32 +136,11 @@ class Character(Unit, ABC):
             else:
                 self.is_moving = False
 
-    def save_shortest_path(self, tile: Tile):
-        self.move_path = []
-        current_x = self.tile.x
-        current_y = self.tile.y
-        x = tile.x
-        y = tile.y
-        while current_x != x:
-            if current_x < x:
-                current_x += 1
-            else:
-                current_x -= 1
-            self.move_path.append(Tile(x=current_x, y=current_y))
+    def update_reachable_tiles_with_path(self, data):
+        self.reachable_tiles_with_path = data
 
-        while current_y != y:
-            if current_y < y:
-                current_y += 1
-            else:
-                current_y -= 1
-            self.move_path.append(Tile(x=current_x, y=current_y))
-
-    def update_pos(self, tile: Tile):
-        if self.is_in_distance(tile.x, tile.y):
-            self.save_shortest_path(tile)
-            # self.tile = tile
-        else:
-            print('out of distance')
+    def update_pos(self, path: list[Tile]):
+        self.move_path = path
 
     def selected(self):
         self.bg_color = Color('red')
@@ -170,4 +150,3 @@ class Character(Unit, ABC):
 
     def is_in_distance(self, x, y):
         return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
-
