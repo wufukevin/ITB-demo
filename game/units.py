@@ -188,3 +188,14 @@ class Character(Unit, ABC):
                     if self.is_in_distance(x, y):
                         ranges.append(Tile(x=x, y=y))
         return ranges
+
+
+if __name__ == '__main__':
+    tile = Tile(x=0, y=0)
+
+
+    def test(*tuple):
+        print(tuple)
+
+
+    test(*tile)
