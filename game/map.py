@@ -1,4 +1,5 @@
 import random
+from collections import deque
 from typing import Sequence, Tuple, List
 
 import pygame
@@ -68,3 +69,32 @@ class Map:
             return []
         random.shuffle(available_unit_tiles)
         return available_unit_tiles[:count]
+
+    def calculate_move_range(self, unit: Unit) -> List[Tile]:
+        queue = deque([(unit.tile.x, unit.tile.y, 0)])
+        visited = {(unit.tile.x, unit.tile.y)}
+        reachable = list()
+
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+        while queue:
+            x, y, distance = queue.popleft()
+
+            if distance <= unit.move_distance:
+                reachable.append(Tile(x=x, y=y))
+
+            if distance < unit.move_distance:
+                for dx, dy in directions:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < app_config.game.tiles.width and 0 <= ny < app_config.game.tiles.height:
+                        if self.is_tile_reachable(nx, ny, visited):
+                            queue.append((nx, ny, distance + 1))
+                            visited.add((nx, ny))
+        return reachable
+
+    def is_tile_reachable(self, nx, ny, visited):
+        cell = self[(nx, ny)]
+        if cell is None:
+            return True
+        return not cell.is_block and (nx, ny) not in visited
+

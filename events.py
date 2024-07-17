@@ -52,8 +52,8 @@ class EventHandler:
 
             EventHandler.selected_unit = self.unit
 
-            if type(EventHandler.selected_unit) is Character and not EventHandler.selected_unit.is_moving:
-                self.game_map.mark_move_range(self.unit.move_range())
+            if not EventHandler.selected_unit.is_moving:
+                self.game_map.mark_move_range(self.game_map.calculate_move_range(self.unit))
                 EventHandler.selected_unit.selected()
 
     class Move(ClickEvent):
@@ -61,8 +61,7 @@ class EventHandler:
             EventHandler.ClickEvent.__init__(self, x, y, game_map)
 
         def execute(self):
-            if type(EventHandler.selected_unit) is Character:
-                EventHandler.selected_unit.update_pos(Tile(x=self.x, y=self.y))
+            EventHandler.selected_unit.update_pos(Tile(x=self.x, y=self.y))
             self.game_map.remove_move_range()
             EventHandler.situation = Situation.NOTHING
             EventHandler.selected_unit = None

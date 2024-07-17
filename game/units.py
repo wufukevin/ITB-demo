@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from collections import deque
 from enum import Enum
 from typing import ClassVar
 
@@ -99,7 +100,7 @@ class Unit(pygame.sprite.Sprite):
         self.bg_color = Color('white')
 
     @abstractmethod
-    def move_range(self):
+    def update_pos(self, tile: Tile):
         pass
 
 
@@ -171,13 +172,3 @@ class Character(Unit, ABC):
     def is_in_distance(self, x, y):
         return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
 
-    def move_range(self):
-        ranges = []
-        for i in range(-self.move_distance, self.move_distance + 1):
-            for j in range(-self.move_distance, self.move_distance + 1):
-                x = self.tile.x + i
-                y = self.tile.y + j
-                if 0 <= x < app_config.game.tiles.width and 0 <= y < app_config.game.tiles.height:
-                    if self.is_in_distance(x, y):
-                        ranges.append(Tile(x=x, y=y))
-        return ranges
