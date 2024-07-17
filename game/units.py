@@ -1,3 +1,4 @@
+from abc import abstractmethod, ABC
 from enum import Enum
 from typing import ClassVar
 
@@ -15,8 +16,9 @@ def manhattan_distance(x1, y1, x2, y2):
 class UnitLayer(Enum):
     Background = -1
     Terrain = 0
-    Character = 1
-    Effect = 2
+    MoveRange = 1
+    Character = 10
+    Effect = 20
 
     @staticmethod
     def selectable_layers():
@@ -69,29 +71,53 @@ class Tile(BaseModel):
     def bottom(self) -> float:
         return self.get_rect().bottom
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
 
 class Unit(pygame.sprite.Sprite):
     bg_color = Color('white')
     boarder_color = Color('black')
     is_block = False
 
-    def __init__(self, tile: Tile, layer: UnitLayer = UnitLayer.Background):
+    def __init__(self, tile: Tile, image: pygame.surface.Surface = None, layer: UnitLayer = UnitLayer.Background):
         pygame.sprite.Sprite.__init__(self)
         self.tile = tile
         self.rect = self.tile.get_rect()
-        self.image = pygame.Surface(self.rect.size)
+        self.image = self.create_plain_image() if image is None else pygame.transform.scale(image, self.rect.size)
+        self.use_plain_image = image is None
         self.layer = layer.value
 
+    def create_plain_image(self):
+        return pygame.Surface(self.rect.size, pygame.SRCALPHA)
+
     def update(self):
-        self.image.fill(self.bg_color)
+        if self.use_plain_image:
+            self.image.fill(self.bg_color)
         self.rect.update(self.tile.get_rect())
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
-    def change_bg_color(self, color: Color):
-        self.bg_color = color
+    def selected(self):
+        if self.use_plain_image:
+            self.bg_color = Color(0, 255, 0, 50)
+
+    def unselected(self):
+        if self.use_plain_image:
+            self.bg_color = Color('white')
+
+    @abstractmethod
+    def move_range(self):
+        pass
 
 
-class Character(Unit):
+class Terrain(Unit, ABC):
+    bg_color = Color('yellow')
+
+    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, layer=UnitLayer.Terrain):
+        super().__init__(tile=tile, image=image, layer=layer)
+
+
+class Character(Unit, ABC):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
@@ -100,12 +126,12 @@ class Character(Unit):
     fps_count = 0
     move_path = []
 
-    def __init__(self, tile=Tile(x=0, y=0), move_distance=3):
-        super().__init__(tile=tile, layer=UnitLayer.Character)
+    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, move_distance=3):
+        super().__init__(tile=tile, image=image, layer=UnitLayer.Character)
         self.move_distance = move_distance
 
     def update(self):
-        Unit.update(self)
+        super().update()
         self.fps_count += 1
         if self.fps_count == self.move_fps:
             self.fps_count = 0
@@ -151,3 +177,14 @@ class Character(Unit):
 
     def is_in_distance(self, x, y):
         return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
+
+    def move_range(self):
+        ranges = []
+        for i in range(-self.move_distance, self.move_distance + 1):
+            for j in range(-self.move_distance, self.move_distance + 1):
+                x = self.tile.x + i
+                y = self.tile.y + j
+                if 0 <= x < app_config.game.tiles.width and 0 <= y < app_config.game.tiles.height:
+                    if self.is_in_distance(x, y):
+                        ranges.append(Tile(x=x, y=y))
+        return ranges

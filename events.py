@@ -1,5 +1,7 @@
 from enum import Enum
+
 import pygame
+
 from game.map import Map
 from game.units import Unit, Character, Tile
 
@@ -41,13 +43,17 @@ class EventHandler:
         def execute(self):
             # check type of selected_unit
             if type(EventHandler.selected_unit) is Character:
-                self.game_map.clean_bg_color()
+                self.game_map.remove_move_range()
                 EventHandler.selected_unit.unselected()
+
+            if self.unit == EventHandler.selected_unit:
+                EventHandler.selected_unit = None
+                return
 
             EventHandler.selected_unit = self.unit
 
             if type(EventHandler.selected_unit) is Character and not EventHandler.selected_unit.is_moving:
-                self.game_map.show_move_distance(self.unit)
+                self.game_map.mark_move_range(self.unit.move_range())
                 EventHandler.selected_unit.selected()
 
     class Move(ClickEvent):
@@ -57,7 +63,7 @@ class EventHandler:
         def execute(self):
             if type(EventHandler.selected_unit) is Character:
                 EventHandler.selected_unit.update_pos(Tile(x=self.x, y=self.y))
-            self.game_map.clean_bg_color()
+            self.game_map.remove_move_range()
             EventHandler.situation = Situation.NOTHING
             EventHandler.selected_unit = None
 
