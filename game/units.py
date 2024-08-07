@@ -1,10 +1,10 @@
-from abc import abstractmethod, ABC
+from abc import ABC
 from enum import Enum
-from typing import ClassVar
+from typing import ClassVar, Any, List
 
 import pygame
 from pydantic import BaseModel, field_validator
-from pygame import Rect, Color
+from pygame import Color, Rect
 
 from config.loader import app_config
 
@@ -76,6 +76,7 @@ class Tile(BaseModel):
 
 
 class Unit(pygame.sprite.Sprite):
+    _observers: List[Any]
     bg_color = Color('white')
     boarder_color = Color('black')
     is_block = False
@@ -87,6 +88,7 @@ class Unit(pygame.sprite.Sprite):
         self.image = self.create_plain_image() if image is None else pygame.transform.scale(image, self.rect.size)
         self.use_plain_image = image is None
         self.layer = layer.value
+        self._observers = []
 
     def create_plain_image(self):
         return pygame.Surface(self.rect.size, pygame.SRCALPHA)
@@ -105,9 +107,20 @@ class Unit(pygame.sprite.Sprite):
         if self.use_plain_image:
             self.bg_color = Color('white')
 
-    @abstractmethod
-    def move_range(self):
-        pass
+    def update_pos(self, tile: Tile):
+        previous_tile = self.tile
+        self.tile = tile
+        self.notify(previous_tile, tile)
+
+    def subscribe(self, observer: Any):
+        self._observers.append(observer)
+
+    def unsubscribe(self, observer: Any):
+        self._observers.remove(observer)
+
+    def notify(self, previous: Tile, current: Tile):
+        for observer in self._observers:
+            observer.update(self, previous, current)
 
 
 class Terrain(Unit, ABC):
@@ -136,7 +149,7 @@ class Character(Unit, ABC):
         if self.fps_count == self.move_fps:
             self.fps_count = 0
             if self.move_path:
-                self.tile = self.move_path.pop(0)
+                self.update_pos(self.move_path.pop(0))
                 self.is_moving = True
             else:
                 self.is_moving = False
@@ -162,6 +175,7 @@ class Character(Unit, ABC):
             self.move_path.append(Tile(x=current_x, y=current_y))
 
     def update_pos(self, tile: Tile):
+        super().update_pos(tile)
         self.unselected()
         if self.is_in_distance(tile.x, tile.y):
             self.save_shortest_path(tile)
@@ -188,14 +202,3 @@ class Character(Unit, ABC):
                     if self.is_in_distance(x, y):
                         ranges.append(Tile(x=x, y=y))
         return ranges
-
-
-if __name__ == '__main__':
-    tile = Tile(x=0, y=0)
-
-
-    def test(*tuple):
-        print(tuple)
-
-
-    test(*tile)

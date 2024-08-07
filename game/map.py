@@ -1,6 +1,7 @@
 import random
 from collections import defaultdict
-from typing import Sequence, Tuple, List
+from collections import deque
+from typing import Sequence, Tuple, List, Any
 
 import pygame
 
@@ -43,6 +44,8 @@ class Map:
         unit_group.draw(self.__surface)
 
     def add(self, units: Sequence[pygame.sprite], **kwargs):
+        for unit in units:
+            unit.subscribe(self)
         self.__add_unit_cache(units)
         self.__background.add(units, **kwargs)
 
@@ -61,6 +64,8 @@ class Map:
         self.remove(move_range)
 
     def remove(self, units: Sequence[pygame.sprite]):
+        for unit in units:
+            unit.unsubscribe(self)
         self.__del_unit_cache(units)
         self.__background.remove(units)
 
@@ -85,3 +90,37 @@ class Map:
             return []
         random.shuffle(available_unit_tiles)
         return available_unit_tiles[:count]
+
+    def reachable_tiles_with_path(self, unit: Unit):
+        queue = deque([(unit.tile.x, unit.tile.y, 0, [Tile(x=unit.tile.x, y=unit.tile.y)])])
+        visited = {(unit.tile.x, unit.tile.y)}
+        reachable_tiles = list()
+
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+        while queue:
+            x, y, distance, path = queue.popleft()
+
+            if distance <= unit.move_distance:
+                reachable_tiles.append((Tile(x=x, y=y), path))
+
+            if distance < unit.move_distance:
+                for dx, dy in directions:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < app_config.game.tiles.width and 0 <= ny < app_config.game.tiles.height:
+                        if self.is_tile_reachable(nx, ny, visited):
+                            queue.append((nx, ny, distance + 1, path + [Tile(x=nx, y=ny)]))
+                            visited.add((nx, ny))
+        return reachable_tiles
+
+    def is_tile_reachable(self, nx, ny, visited):
+        cell = self[(nx, ny)]
+        if (nx, ny) in visited:
+            return False
+        if cell is None:
+            return True
+        return not cell.is_block
+
+    def update(self, subject: Any, previous: Tile, current: Tile):
+        self.__units[previous].remove(subject)
+        self.__units[current].append(subject)
