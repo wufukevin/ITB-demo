@@ -131,9 +131,9 @@ class Unit(pygame.sprite.Sprite):
 
 class AnimatedUnit(Unit):
     def __init__(self, tile: Tile, images: List[pygame.surface.Surface], layer: UnitLayer = UnitLayer.Background,
-                 speed_frame=10):
+                 frame_per_image=10):
         super().__init__(tile=tile, image=images[0], layer=layer)
-        self.speed_frame = speed_frame
+        self.speed_frame = frame_per_image
         self.current_animate_frame = 0
         self.images = images
 
@@ -152,7 +152,7 @@ class Terrain(Unit, ABC):
         super().__init__(tile=tile, image=image, layer=layer)
 
 
-class Character(Unit, ABC):
+class Character(AnimatedUnit, ABC):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
@@ -161,8 +161,9 @@ class Character(Unit, ABC):
     fps_count = 0
     move_path = []
 
-    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, move_distance=3):
-        super().__init__(tile=tile, image=image, layer=UnitLayer.Character)
+    def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
+                 move_distance=3):
+        super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
 
     def update(self):
