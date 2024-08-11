@@ -94,9 +94,15 @@ class Unit(pygame.sprite.Sprite):
         return pygame.Surface(self.rect.size, pygame.SRCALPHA)
 
     def update(self):
+        self.rect.update(self.tile.get_rect())
+        self.render_boarder()
+        self.render_image()
+
+    def render_image(self):
         if self.use_plain_image:
             self.image.fill(self.bg_color)
-        self.rect.update(self.tile.get_rect())
+
+    def render_boarder(self):
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
     def selected(self):
@@ -121,6 +127,22 @@ class Unit(pygame.sprite.Sprite):
     def notify(self, previous: Tile, current: Tile):
         for observer in self._observers:
             observer.update(self, previous, current)
+
+
+class AnimatedUnit(Unit):
+    def __init__(self, tile: Tile, images: List[pygame.surface.Surface], layer: UnitLayer = UnitLayer.Background,
+                 speed_frame=10):
+        super().__init__(tile=tile, image=images[0], layer=layer)
+        self.speed_frame = speed_frame
+        self.current_animate_frame = 0
+        self.images = images
+
+    def update(self):
+        super().update()
+        self.current_animate_frame = (self.current_animate_frame + 1) % self.speed_frame
+        if self.current_animate_frame == 0:
+            self.images.append(self.images.pop(0))
+            self.image = pygame.transform.scale(self.images[0], self.rect.size)
 
 
 class Terrain(Unit, ABC):
