@@ -15,7 +15,7 @@ class Map:
     def __init__(self, surface: pygame.Surface):
         self.__unit_generate_count = {
             UnitType.CHARACTER: app_config.game.character,
-            UnitType.TERRAIN: app_config.game.terrain,
+            UnitType.BLOCKER: app_config.game.terrain,
         }
         self.__units = defaultdict(list)
         self.__surface = surface

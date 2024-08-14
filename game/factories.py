@@ -3,6 +3,8 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import List
 
+from pygame import Color
+
 from game.units import Unit, Character, UnitLayer, Tile
 from resource.loader import ImageLoader, background_images, character_images
 
@@ -10,7 +12,7 @@ from resource.loader import ImageLoader, background_images, character_images
 class UnitType(Enum):
     BACKGROUND = 0
     MOVE_RANGE = 1
-    TERRAIN = 2
+    BLOCKER = 2
     CHARACTER = 3
 
 
@@ -33,7 +35,7 @@ class BackgroundFactory(GameFactory):
 class MoveRangeFactory(GameFactory):
 
     def create_unit(self, tile: Tile) -> Unit:
-        return Unit(tile=tile, layer=UnitLayer.MoveRange)
+        return Unit(tile=tile, layer=UnitLayer.MoveRange, bg_color=Color(0, 255, 0, 50))
 
 
 class CharacterFactory(GameFactory):
@@ -52,7 +54,7 @@ class TerrainFactory(GameFactory):
 def unit_factory(factory_type: UnitType) -> GameFactory:
     switcher = {
         UnitType.CHARACTER: CharacterFactory(),
-        UnitType.TERRAIN: TerrainFactory(),
+        UnitType.BLOCKER: TerrainFactory(),
         UnitType.BACKGROUND: BackgroundFactory(),
         UnitType.MOVE_RANGE: MoveRangeFactory()
     }

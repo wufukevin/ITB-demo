@@ -13,7 +13,7 @@ from game.screen import Screen
 # 初始化
 screen = Screen(app_config)
 game_map = Map(screen.surface)
-game_map.generate_units(UnitType.TERRAIN)
+game_map.generate_units(UnitType.BLOCKER)
 game_map.generate_units(UnitType.CHARACTER)
 events_handler = EventHandler()
 
