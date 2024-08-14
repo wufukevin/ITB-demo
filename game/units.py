@@ -1,4 +1,5 @@
-from abc import ABC
+from abc import abstractmethod, ABC
+from collections import deque
 from enum import Enum
 from typing import ClassVar, Any, List
 
@@ -160,6 +161,7 @@ class Character(AnimatedUnit, ABC):
     move_fps = 30
     fps_count = 0
     move_path = []
+    reachable_tiles_with_path = []
 
     def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
                  move_distance=3):
@@ -177,34 +179,11 @@ class Character(AnimatedUnit, ABC):
             else:
                 self.is_moving = False
 
-    def save_shortest_path(self, tile: Tile):
-        self.move_path = []
-        current_x = self.tile.x
-        current_y = self.tile.y
-        x = tile.x
-        y = tile.y
-        while current_x != x:
-            if current_x < x:
-                current_x += 1
-            else:
-                current_x -= 1
-            self.move_path.append(Tile(x=current_x, y=current_y))
+    def update_reachable_tiles_with_path(self, data):
+        self.reachable_tiles_with_path = data
 
-        while current_y != y:
-            if current_y < y:
-                current_y += 1
-            else:
-                current_y -= 1
-            self.move_path.append(Tile(x=current_x, y=current_y))
-
-    def update_pos(self, tile: Tile):
-        super().update_pos(tile)
-        self.unselected()
-        if self.is_in_distance(tile.x, tile.y):
-            self.save_shortest_path(tile)
-            # self.tile = tile
-        else:
-            print('out of distance')
+    def update_move_path(self, path: list[Tile]):
+        self.move_path = path
 
     def selected(self):
         self.bg_color = Color('red')
