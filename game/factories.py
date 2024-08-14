@@ -1,8 +1,9 @@
+import random
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import List
 
-from game.units import Unit, Character, Terrain, UnitLayer, Tile
+from game.units import Unit, Character, UnitLayer, Tile
 from resource.loader import ImageLoader, background_images, character_images
 
 
@@ -44,7 +45,8 @@ class CharacterFactory(GameFactory):
 class TerrainFactory(GameFactory):
 
     def create_unit(self, tile: Tile) -> Unit:
-        return Terrain(tile=tile, image=ImageLoader.random_load(background_images))
+        return Unit(tile=tile, image=ImageLoader.random_load(background_images), layer=UnitLayer.Terrain,
+                    is_block=random.Random().randint(1, 50) % 2 == 0)
 
 
 def unit_factory(factory_type: UnitType) -> GameFactory:

@@ -77,19 +77,20 @@ class Map:
         background_tiles = set(
             [unit.tile for unit in self.__background if (UnitLayer(unit.layer) is UnitLayer.Background)])
         unit_tiles = set(
-            [unit.tile for unit in self.__background if (UnitLayer(unit.layer) in UnitLayer.selectable_layers())])
+            [unit.tile for unit in self.__background if
+             (UnitLayer(unit.layer) in UnitLayer.selectable_layers())])
         return list(background_tiles.difference(unit_tiles))
 
     def generate_units(self, unit_type: UnitType):
         generate_tiles = self.__pick_random_available_tiles(self.__unit_generate_count[unit_type])
         self.add(unit_factory(unit_type).generate(generate_tiles))
 
-    def __pick_random_available_tiles(self, count: int) -> List[Tile]:
+    def __pick_random_available_tiles(self, tile_count: int) -> List[Tile]:
         available_unit_tiles = self.__available_tiles_for_units()
-        if len(available_unit_tiles) < count:
+        if len(available_unit_tiles) < tile_count:
             return []
         random.shuffle(available_unit_tiles)
-        return available_unit_tiles[:count]
+        return available_unit_tiles[:tile_count]
 
     def reachable_tiles_with_path(self, unit: Unit):
         queue = deque([(unit.tile.x, unit.tile.y, 0, [Tile(x=unit.tile.x, y=unit.tile.y)])])
