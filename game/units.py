@@ -1,11 +1,11 @@
 from abc import abstractmethod, ABC
 from collections import deque
 from enum import Enum
-from typing import ClassVar
+from typing import ClassVar, Any, List
 
 import pygame
 from pydantic import BaseModel, field_validator
-from pygame import Rect, Color
+from pygame import Color, Rect
 
 from config.loader import app_config
 
@@ -77,6 +77,7 @@ class Tile(BaseModel):
 
 
 class Unit(pygame.sprite.Sprite):
+    _observers: List[Any]
     bg_color = Color('white')
     boarder_color = Color('black')
     is_block = False
@@ -88,14 +89,21 @@ class Unit(pygame.sprite.Sprite):
         self.image = self.create_plain_image() if image is None else pygame.transform.scale(image, self.rect.size)
         self.use_plain_image = image is None
         self.layer = layer.value
+        self._observers = []
 
     def create_plain_image(self):
         return pygame.Surface(self.rect.size, pygame.SRCALPHA)
 
     def update(self):
+        self.rect.update(self.tile.get_rect())
+        self.render_boarder()
+        self.render_image()
+
+    def render_image(self):
         if self.use_plain_image:
             self.image.fill(self.bg_color)
-        self.rect.update(self.tile.get_rect())
+
+    def render_boarder(self):
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
     def selected(self):
@@ -106,9 +114,36 @@ class Unit(pygame.sprite.Sprite):
         if self.use_plain_image:
             self.bg_color = Color('white')
 
-    @abstractmethod
     def update_pos(self, tile: Tile):
-        pass
+        previous_tile = self.tile
+        self.tile = tile
+        self.notify(previous_tile, tile)
+
+    def subscribe(self, observer: Any):
+        self._observers.append(observer)
+
+    def unsubscribe(self, observer: Any):
+        self._observers.remove(observer)
+
+    def notify(self, previous: Tile, current: Tile):
+        for observer in self._observers:
+            observer.update(self, previous, current)
+
+
+class AnimatedUnit(Unit):
+    def __init__(self, tile: Tile, images: List[pygame.surface.Surface], layer: UnitLayer = UnitLayer.Background,
+                 frame_per_image=10):
+        super().__init__(tile=tile, image=images[0], layer=layer)
+        self.speed_frame = frame_per_image
+        self.current_animate_frame = 0
+        self.images = images
+
+    def update(self):
+        super().update()
+        self.current_animate_frame = (self.current_animate_frame + 1) % self.speed_frame
+        if self.current_animate_frame == 0:
+            self.images.append(self.images.pop(0))
+            self.image = pygame.transform.scale(self.images[0], self.rect.size)
 
 
 class Terrain(Unit, ABC):
@@ -118,7 +153,7 @@ class Terrain(Unit, ABC):
         super().__init__(tile=tile, image=image, layer=layer)
 
 
-class Character(Unit, ABC):
+class Character(AnimatedUnit, ABC):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
@@ -128,8 +163,9 @@ class Character(Unit, ABC):
     move_path = []
     reachable_tiles_with_path = []
 
-    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, move_distance=3):
-        super().__init__(tile=tile, image=image, layer=UnitLayer.Character)
+    def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
+                 move_distance=3):
+        super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
 
     def update(self):
@@ -138,7 +174,7 @@ class Character(Unit, ABC):
         if self.fps_count == self.move_fps:
             self.fps_count = 0
             if self.move_path:
-                self.tile = self.move_path.pop(0)
+                self.update_pos(self.move_path.pop(0))
                 self.is_moving = True
             else:
                 self.is_moving = False
@@ -146,8 +182,16 @@ class Character(Unit, ABC):
     def update_reachable_tiles_with_path(self, data):
         self.reachable_tiles_with_path = data
 
-    def update_pos(self, path: list[Tile]):
+    def update_move_path(self, path: list[Tile]):
         self.move_path = path
+
+    def update_pos(self, tile: Tile):
+        super().update_pos(tile)
+        self.unselected()
+        if self.is_in_distance(tile.x, tile.y):
+            self.tile = tile
+        else:
+            print('out of distance')
 
     def selected(self):
         self.bg_color = Color('red')
@@ -157,3 +201,14 @@ class Character(Unit, ABC):
 
     def is_in_distance(self, x, y):
         return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
+
+    def move_range(self):
+        ranges = []
+        for i in range(-self.move_distance, self.move_distance + 1):
+            for j in range(-self.move_distance, self.move_distance + 1):
+                x = self.tile.x + i
+                y = self.tile.y + j
+                if 0 <= x < app_config.game.tiles.width and 0 <= y < app_config.game.tiles.height:
+                    if self.is_in_distance(x, y):
+                        ranges.append(Tile(x=x, y=y))
+        return ranges

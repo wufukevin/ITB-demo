@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from collections import deque
-from typing import Sequence, Tuple, List
+from typing import Sequence, Tuple, List, Any
 
 import pygame
 
@@ -44,6 +44,8 @@ class Map:
         unit_group.draw(self.__surface)
 
     def add(self, units: Sequence[pygame.sprite], **kwargs):
+        for unit in units:
+            unit.subscribe(self)
         self.__add_unit_cache(units)
         self.__background.add(units, **kwargs)
 
@@ -62,6 +64,8 @@ class Map:
         self.remove(move_range)
 
     def remove(self, units: Sequence[pygame.sprite]):
+        for unit in units:
+            unit.unsubscribe(self)
         self.__del_unit_cache(units)
         self.__background.remove(units)
 
@@ -108,12 +112,15 @@ class Map:
                             queue.append((nx, ny, distance + 1, path + [Tile(x=nx, y=ny)]))
                             visited.add((nx, ny))
         return reachable_tiles
-        # print(reachable_tiles)
 
     def is_tile_reachable(self, nx, ny, visited):
         cell = self[(nx, ny)]
-        if(nx, ny) in visited:
+        if (nx, ny) in visited:
             return False
         if cell is None:
             return True
         return not cell.is_block
+
+    def update(self, subject: Any, previous: Tile, current: Tile):
+        self.__units[previous].remove(subject)
+        self.__units[current].append(subject)

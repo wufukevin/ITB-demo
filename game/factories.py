@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import List
 
-from game.units import Unit, Character, Tile, Terrain, UnitLayer
+from game.units import Unit, Character, Terrain, UnitLayer, Tile
 from resource.loader import ImageLoader, background_images, character_images
 
 
@@ -38,7 +38,7 @@ class MoveRangeFactory(GameFactory):
 class CharacterFactory(GameFactory):
 
     def create_unit(self, tile: Tile) -> Unit:
-        return Character(tile=tile, image=ImageLoader.random_load(character_images))
+        return Character(tile=tile, images=[ImageLoader.random_load(character_images)])
 
 
 class TerrainFactory(GameFactory):

@@ -67,7 +67,7 @@ class EventHandler:
             if type(EventHandler.selected_unit) is Character:
                 for data in EventHandler.selected_unit.reachable_tiles_with_path:
                     if data[0] == Tile(x=self.x, y=self.y):
-                        EventHandler.selected_unit.update_pos(data[1])
+                        EventHandler.selected_unit.update_move_path(data[1])
             self.game_map.remove_move_range()
             EventHandler.situation = Situation.NOTHING
             EventHandler.selected_unit = None
