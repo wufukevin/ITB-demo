@@ -185,14 +185,6 @@ class Character(AnimatedUnit, ABC):
     def update_move_path(self, path: list[Tile]):
         self.move_path = path
 
-    def update_pos(self, tile: Tile):
-        super().update_pos(tile)
-        self.unselected()
-        if self.is_in_distance(tile.x, tile.y):
-            self.tile = tile
-        else:
-            print('out of distance')
-
     def selected(self):
         self.bg_color = Color('red')
 
