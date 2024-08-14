@@ -162,14 +162,25 @@ class Character(AnimatedUnit, ABC):
     fps_count = 0
     move_path = []
     reachable_tiles_with_path = []
+    max_health = 5
+    current_health = max_health
 
     def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
                  move_distance=3):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
 
+        # 血條位置
+        image_rect = self.image.get_rect()
+        self.health_bar_x = 5
+        self.health_bar_y = image_rect.bottom - 10
+        self.health_bar_width = image_rect.width - 10
+        self.health_bar_height = 5
+
     def update(self):
         super().update()
+        self.draw_health_bar()
+        pygame.display.flip()
         self.fps_count += 1
         if self.fps_count == self.move_fps:
             self.fps_count = 0
@@ -179,19 +190,22 @@ class Character(AnimatedUnit, ABC):
             else:
                 self.is_moving = False
 
+    def draw_health_bar(self):
+        pygame.draw.rect(self.image, (100, 100, 100),
+                         (self.health_bar_x, self.health_bar_y, self.health_bar_width, self.health_bar_height))
+        segment_width = self.health_bar_width / self.max_health
+        for i in range(self.current_health):
+            pygame.draw.rect(self.image, (255, 0, 0),
+                             (self.health_bar_x + i * segment_width, self.health_bar_y,
+                              segment_width, self.health_bar_height))
+            pygame.draw.rect(self.image, self.boarder_color, (self.health_bar_x + i * segment_width, self.health_bar_y,
+                                                              segment_width, self.health_bar_height), 1)
+
     def update_reachable_tiles_with_path(self, data):
         self.reachable_tiles_with_path = data
 
     def update_move_path(self, path: list[Tile]):
         self.move_path = path
-
-    def update_pos(self, tile: Tile):
-        super().update_pos(tile)
-        self.unselected()
-        if self.is_in_distance(tile.x, tile.y):
-            self.tile = tile
-        else:
-            print('out of distance')
 
     def selected(self):
         self.bg_color = Color('red')
