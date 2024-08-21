@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import ClassVar, Any, List
+from typing import ClassVar, Any, List, Self
 
 import pygame
 from pydantic import BaseModel, field_validator
@@ -69,6 +69,30 @@ class Tile(BaseModel):
     @property
     def bottom(self) -> float:
         return self.get_rect().bottom
+
+    @property
+    def right_tile(self) -> Self:
+        return Tile(x=self.x + 1, y=self.y) if self.x + 1 < app_config.game.tiles.width else None
+
+    @property
+    def bottom_tile(self) -> Self:
+        return Tile(x=self.x, y=self.y + 1) if self.y + 1 < app_config.game.tiles.height else None
+
+    @property
+    def left_tile(self) -> Self:
+        return Tile(x=self.x - 1, y=self.y) if self.x - 1 >= 0 else None
+
+    @property
+    def top_tile(self) -> Self:
+        return Tile(x=self.x, y=self.y - 1) if self.y - 1 >= 0 else None
+
+    @property
+    def neighbor_tiles(self) -> List[Self]:
+        return [neighbor for neighbor in [self.left_tile, self.top_tile, self.right_tile, self.bottom_tile] if neighbor]
+
+    @classmethod
+    def from_screen_coordinate(cls: Self, x: int, y: int) -> Self:
+        return Tile(x=int(x / Tile.width), y=int(y / Tile.height))
 
     def __hash__(self):
         return hash((self.x, self.y))

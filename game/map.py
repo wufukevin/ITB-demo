@@ -1,6 +1,5 @@
 import random
-from collections import defaultdict
-from collections import deque
+from collections import defaultdict, deque
 from typing import Sequence, Tuple, List, Any
 
 import pygame
@@ -73,7 +72,7 @@ class Map:
         for unit in units:
             self.__units[unit.tile].remove(unit)
 
-    def __available_tiles_for_units(self) -> List[Tile]:
+    def available_tiles_for_units(self) -> List[Tile]:
         background_tiles = set(
             [unit.tile for unit in self.__background if (UnitLayer(unit.layer) is UnitLayer.Background)])
         unit_tiles = set(
@@ -86,41 +85,45 @@ class Map:
         self.add(unit_factory(unit_type).generate(generate_tiles))
 
     def __pick_random_available_tiles(self, tile_count: int) -> List[Tile]:
-        available_unit_tiles = self.__available_tiles_for_units()
+        available_unit_tiles = self.available_tiles_for_units()
         if len(available_unit_tiles) < tile_count:
             return []
         random.shuffle(available_unit_tiles)
         return available_unit_tiles[:tile_count]
 
-    def reachable_tiles_with_path(self, unit: Unit):
-        queue = deque([(unit.tile.x, unit.tile.y, 0, [Tile(x=unit.tile.x, y=unit.tile.y)])])
-        visited = {(unit.tile.x, unit.tile.y)}
+    def reachable_tiles(self, start: Tile, move_distance: int):
+        for x in range(start.x - move_distance, start.x + move_distance + 1):
+            if x < 0 or x >= app_config.game.tiles.width:
+                continue
+            for y in range(start.y - move_distance, start.y + move_distance + 1):
+                if y < 0 or y >= app_config.game.tiles.height:
+                    continue
+                if abs(x - start.x) + abs(y - start.y) > move_distance:
+                    continue
+                unit = self[(x, y)]
+                if unit is None or not unit.is_block:
+                    yield Tile(x=x, y=y)
+
+    def find_path(self, tile: Tile, move_distance: int):
+        queue = deque([(tile, 0, [tile])])
+        visited = {tile}
         reachable_tiles = list()
 
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
         while queue:
-            x, y, distance, path = queue.popleft()
+            current_tile, distance, path = queue.popleft()
 
-            if distance <= unit.move_distance:
-                reachable_tiles.append((Tile(x=x, y=y), path))
+            if distance <= move_distance:
+                reachable_tiles.append((current_tile, path))
 
-            if distance < unit.move_distance:
-                for dx, dy in directions:
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < app_config.game.tiles.width and 0 <= ny < app_config.game.tiles.height:
-                        if self.is_tile_reachable(nx, ny, visited):
-                            queue.append((nx, ny, distance + 1, path + [Tile(x=nx, y=ny)]))
-                            visited.add((nx, ny))
+            if distance < move_distance:
+                for neighbor in current_tile.neighbor_tiles:
+                    unit = self[neighbor]
+                    if neighbor in visited:
+                        continue
+                    if unit is None or not unit.is_block:
+                        queue.append((neighbor, distance + 1, path + [neighbor]))
+                        visited.add(neighbor)
         return reachable_tiles
-
-    def is_tile_reachable(self, nx, ny, visited):
-        cell = self[(nx, ny)]
-        if (nx, ny) in visited:
-            return False
-        if cell is None:
-            return True
-        return not cell.is_block
 
     def update(self, subject: Any, previous: Tile, current: Tile):
         self.__units[previous].remove(subject)
