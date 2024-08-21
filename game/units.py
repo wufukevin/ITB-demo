@@ -226,3 +226,12 @@ class Character(AnimatedUnit, ABC):
                     if self.is_in_distance(x, y):
                         ranges.append(Tile(x=x, y=y))
         return ranges
+
+    def on_hit(self, damage=1):
+        self.current_health -= damage
+        if self.current_health <= 0:
+            self.notify_death()
+
+    def notify_death(self):
+        for observer in self._observers:
+            observer.remove([self])
