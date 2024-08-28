@@ -6,7 +6,8 @@ import pygame
 
 from config.loader import app_config
 from game.factories import unit_factory, UnitType
-from game.units import Tile, UnitLayer, Unit
+from game.units import UnitLayer, Unit
+from game.tile import Tile
 
 
 class Map:

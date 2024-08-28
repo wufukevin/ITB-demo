@@ -5,7 +5,8 @@ from typing import List
 
 from pygame import Color
 
-from game.units import Unit, Character, UnitLayer, Tile
+from game.units import Unit, Character, UnitLayer
+from game.tile import Tile
 from resource.loader import ImageLoader, background_images, character_images
 
 
