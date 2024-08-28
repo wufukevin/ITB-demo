@@ -3,10 +3,11 @@ from enum import Enum
 import pygame
 
 from game.map import Map
-from game.units import Unit, Character, Tile
+from game.tile import Tile
+from game.units import Unit, Character
 
 
-class Situation(Enum):
+class ClickMode(Enum):
     NOTHING = 1
     SELECTED = 2
     MOVING = 3
@@ -14,7 +15,7 @@ class Situation(Enum):
 
 class EventHandler:
     _instance = None
-    situation = Situation.NOTHING
+    click_mode = ClickMode.NOTHING
     selected_unit = None
 
     def __new__(cls):
@@ -31,7 +32,7 @@ class EventHandler:
             self.game_map = game_map
 
         @classmethod
-        def execute(self):
+        def execute(cls):
             pass
 
     class Select(ClickEvent):
@@ -69,7 +70,7 @@ class EventHandler:
                     if data[0] == self.tile:
                         selected_unit.update_move_path(data[1])
             self.game_map.remove_move_range()
-            EventHandler.situation = Situation.NOTHING
+            EventHandler.click_mode = ClickMode.NOTHING
             EventHandler.selected_unit = None
 
     class Attack(ClickEvent):
@@ -88,13 +89,13 @@ class EventHandler:
 
     def get_click_event(self, game_map: Map, tile: Tile):
         click_event = EventHandler.ClickEvent(tile, game_map)
-        click_result = game_map[tile]
-        if click_result:
-            self.situation = Situation.SELECTED
-            # click_event = EventHandler.Select(click_result, game_map)
-            click_event = EventHandler.Attack(click_result, game_map, tile)
+        clicked_unit = game_map[tile]
+        if clicked_unit:
+            self.click_mode = ClickMode.SELECTED
+            # click_event = EventHandler.Select(clicked_unit, game_map)
+            click_event = EventHandler.Attack(clicked_unit, game_map, tile)
         else:
-            if self.situation == Situation.SELECTED:
-                self.situation = Situation.MOVING
+            if self.click_mode == ClickMode.SELECTED:
+                self.click_mode = ClickMode.MOVING
                 click_event = EventHandler.Move(tile, game_map)
         return click_event

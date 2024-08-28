@@ -1,15 +1,10 @@
 from enum import Enum
-from typing import ClassVar, Any, List, Self
+from typing import Any, List
 
 import pygame
-from pydantic import BaseModel, field_validator
-from pygame import Color, Rect
+from pygame import Color
 
-from config.loader import app_config
-
-
-def manhattan_distance(x1, y1, x2, y2):
-    return abs(x1 - x2) + abs(y1 - y2)
+from game.tile import Tile
 
 
 class UnitLayer(Enum):
@@ -22,80 +17,6 @@ class UnitLayer(Enum):
     @staticmethod
     def selectable_layers():
         return [UnitLayer.Terrain, UnitLayer.Character]
-
-
-class Tile(BaseModel):
-    width: ClassVar[float] = app_config.screen.width / app_config.game.tiles.width
-    height: ClassVar[float] = app_config.screen.height / app_config.game.tiles.height
-    x: int
-    y: int
-    padding: int = 0
-
-    """
-    Tile accepts x and y which represents the tile coordination on the map starting from 0,0
-    """
-
-    @field_validator('x')
-    @classmethod
-    def check_x(cls, v):
-        if v < 0 or v >= app_config.game.tiles.width:
-            raise ValueError('x out of range')
-        return v
-
-    @field_validator('y')
-    @classmethod
-    def check_y(cls, v):
-        if v < 0 or v >= app_config.game.tiles.height:
-            raise ValueError('y out of range')
-        return v
-
-    def get_rect(self) -> Rect:
-        return pygame.Rect(self.x * self.width + self.padding, self.y * self.height + self.padding,
-                           self.width - self.padding * 2,
-                           self.height - self.padding * 2)
-
-    @property
-    def left(self) -> float:
-        return self.get_rect().left
-
-    @property
-    def top(self) -> float:
-        return self.get_rect().top
-
-    @property
-    def right(self) -> float:
-        return self.get_rect().right
-
-    @property
-    def bottom(self) -> float:
-        return self.get_rect().bottom
-
-    @property
-    def right_tile(self) -> Self:
-        return Tile(x=self.x + 1, y=self.y) if self.x + 1 < app_config.game.tiles.width else None
-
-    @property
-    def bottom_tile(self) -> Self:
-        return Tile(x=self.x, y=self.y + 1) if self.y + 1 < app_config.game.tiles.height else None
-
-    @property
-    def left_tile(self) -> Self:
-        return Tile(x=self.x - 1, y=self.y) if self.x - 1 >= 0 else None
-
-    @property
-    def top_tile(self) -> Self:
-        return Tile(x=self.x, y=self.y - 1) if self.y - 1 >= 0 else None
-
-    @property
-    def neighbor_tiles(self) -> List[Self]:
-        return [neighbor for neighbor in [self.left_tile, self.top_tile, self.right_tile, self.bottom_tile] if neighbor]
-
-    @classmethod
-    def from_screen_coordinate(cls: Self, x: int, y: int) -> Self:
-        return Tile(x=int(x / Tile.width), y=int(y / Tile.height))
-
-    def __hash__(self):
-        return hash((self.x, self.y))
 
 
 class Unit(pygame.sprite.Sprite):
@@ -179,10 +100,9 @@ class Character(AnimatedUnit):
     boarder_color = Color('black')
     is_block = True
     is_moving = False
-    move_fps = 30
-    fps_count = 0
+    frame_per_move = 10
+    current_move_frame = 0
     move_path = []
-    reachable_tiles_with_path = []
     max_health = 5
     current_health = max_health
 
@@ -195,17 +115,13 @@ class Character(AnimatedUnit):
     def set_hp_position(self):
         # 血條位置
         image_rect = self.image.get_rect()
-        self.health_bar_x = 5
-        self.health_bar_y = image_rect.bottom - 10
-        self.health_bar_width = image_rect.width - 10
-        self.health_bar_height = 5
+        self.health_bar_rect = pygame.Rect(5, image_rect.bottom - 10, image_rect.width - 10, 5)
 
     def update(self):
         super().update()
         self.draw_health_bar()
-        self.fps_count += 1
-        if self.fps_count == self.move_fps:
-            self.fps_count = 0
+        self.current_move_frame = (self.current_move_frame + 1) % self.frame_per_move
+        if self.current_move_frame == 0:
             if self.move_path:
                 self.update_pos(self.move_path.pop(0))
                 self.is_moving = True
@@ -213,42 +129,28 @@ class Character(AnimatedUnit):
                 self.is_moving = False
 
     def draw_health_bar(self):
-        pygame.draw.rect(self.image, (100, 100, 100),
-                         (self.health_bar_x, self.health_bar_y, self.health_bar_width, self.health_bar_height))
-        segment_width = self.health_bar_width / self.max_health
+        pygame.draw.rect(self.image, (100, 100, 100), self.health_bar_rect)
+        segment_width = self.health_bar_rect.width / self.max_health
         for i in range(self.current_health):
             pygame.draw.rect(self.image, (255, 0, 0),
-                             (self.health_bar_x + i * segment_width, self.health_bar_y,
-                              segment_width, self.health_bar_height))
-            pygame.draw.rect(self.image, self.boarder_color, (self.health_bar_x + i * segment_width, self.health_bar_y,
-                                                              segment_width, self.health_bar_height), 1)
-
-    def update_reachable_tiles_with_path(self, data):
-        self.reachable_tiles_with_path = data
+                             (self.health_bar_rect.x + i * segment_width, self.health_bar_rect.y,
+                              segment_width, self.health_bar_rect.height))
+            pygame.draw.rect(self.image, self.boarder_color,
+                             (self.health_bar_rect.x + i * segment_width, self.health_bar_rect.y,
+                              segment_width, self.health_bar_rect.height), 1)
 
     def update_move_path(self, path: list[Tile]):
         self.move_path = path
 
     def selected(self):
-        self.bg_color = Color('red')
+        # do nothing instead default behavior for now
+        pass
 
     def unselected(self):
-        self.bg_color = Color('blue')
+        # do nothing instead default behavior for now
+        pass
 
-    def is_in_distance(self, x, y):
-        return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
-
-    def move_range(self):
-        ranges = []
-        for i in range(-self.move_distance, self.move_distance + 1):
-            for j in range(-self.move_distance, self.move_distance + 1):
-                x = self.tile.x + i
-                y = self.tile.y + j
-                if 0 <= x < app_config.game.tiles.width and 0 <= y < app_config.game.tiles.height:
-                    if self.is_in_distance(x, y):
-                        ranges.append(Tile(x=x, y=y))
-        return ranges
-
+    # TODO: consider MVC pattern
     def on_hit(self, damage: int):
         self.current_health -= damage
         if self.current_health <= 0:
