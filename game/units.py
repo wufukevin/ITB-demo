@@ -183,14 +183,26 @@ class Character(AnimatedUnit):
     fps_count = 0
     move_path = []
     reachable_tiles_with_path = []
+    max_health = 5
+    current_health = max_health
 
     def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
                  move_distance=3):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
+        self.set_hp_position()
+
+    def set_hp_position(self):
+        # 血條位置
+        image_rect = self.image.get_rect()
+        self.health_bar_x = 5
+        self.health_bar_y = image_rect.bottom - 10
+        self.health_bar_width = image_rect.width - 10
+        self.health_bar_height = 5
 
     def update(self):
         super().update()
+        self.draw_health_bar()
         self.fps_count += 1
         if self.fps_count == self.move_fps:
             self.fps_count = 0
@@ -199,6 +211,17 @@ class Character(AnimatedUnit):
                 self.is_moving = True
             else:
                 self.is_moving = False
+
+    def draw_health_bar(self):
+        pygame.draw.rect(self.image, (100, 100, 100),
+                         (self.health_bar_x, self.health_bar_y, self.health_bar_width, self.health_bar_height))
+        segment_width = self.health_bar_width / self.max_health
+        for i in range(self.current_health):
+            pygame.draw.rect(self.image, (255, 0, 0),
+                             (self.health_bar_x + i * segment_width, self.health_bar_y,
+                              segment_width, self.health_bar_height))
+            pygame.draw.rect(self.image, self.boarder_color, (self.health_bar_x + i * segment_width, self.health_bar_y,
+                                                              segment_width, self.health_bar_height), 1)
 
     def update_reachable_tiles_with_path(self, data):
         self.reachable_tiles_with_path = data
@@ -225,3 +248,12 @@ class Character(AnimatedUnit):
                     if self.is_in_distance(x, y):
                         ranges.append(Tile(x=x, y=y))
         return ranges
+
+    def on_hit(self, damage: int):
+        self.current_health -= damage
+        if self.current_health <= 0:
+            self.notify_death()
+
+    def notify_death(self):
+        for observer in self._observers:
+            observer.remove([self])
