@@ -1,7 +1,5 @@
-from abc import abstractmethod, ABC
-from collections import deque
 from enum import Enum
-from typing import ClassVar, Any, List
+from typing import ClassVar, Any, List, Self
 
 import pygame
 from pydantic import BaseModel, field_validator
@@ -72,47 +70,77 @@ class Tile(BaseModel):
     def bottom(self) -> float:
         return self.get_rect().bottom
 
+    @property
+    def right_tile(self) -> Self:
+        return Tile(x=self.x + 1, y=self.y) if self.x + 1 < app_config.game.tiles.width else None
+
+    @property
+    def bottom_tile(self) -> Self:
+        return Tile(x=self.x, y=self.y + 1) if self.y + 1 < app_config.game.tiles.height else None
+
+    @property
+    def left_tile(self) -> Self:
+        return Tile(x=self.x - 1, y=self.y) if self.x - 1 >= 0 else None
+
+    @property
+    def top_tile(self) -> Self:
+        return Tile(x=self.x, y=self.y - 1) if self.y - 1 >= 0 else None
+
+    @property
+    def neighbor_tiles(self) -> List[Self]:
+        return [neighbor for neighbor in [self.left_tile, self.top_tile, self.right_tile, self.bottom_tile] if neighbor]
+
+    @classmethod
+    def from_screen_coordinate(cls: Self, x: int, y: int) -> Self:
+        return Tile(x=int(x / Tile.width), y=int(y / Tile.height))
+
     def __hash__(self):
         return hash((self.x, self.y))
 
 
 class Unit(pygame.sprite.Sprite):
     _observers: List[Any]
-    bg_color = Color('white')
-    boarder_color = Color('black')
+    bg_color: Color = Color('white')
+    boarder_color: Color = Color('black')
     is_block = False
+    is_destroyable = False
+    show_boarder = True
 
-    def __init__(self, tile: Tile, image: pygame.surface.Surface = None, layer: UnitLayer = UnitLayer.Background):
+    def __init__(self, tile: Tile, image: pygame.surface.Surface = None, layer: UnitLayer = UnitLayer.Background,
+                 **kwargs):
         pygame.sprite.Sprite.__init__(self)
+
+        # Accessing additional keyword arguments
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
         self.tile = tile
         self.rect = self.tile.get_rect()
-        self.image = self.create_plain_image() if image is None else pygame.transform.scale(image, self.rect.size)
-        self.use_plain_image = image is None
+        self.image = self.create_plain_image(self.bg_color) if image is None else pygame.transform.scale(image,
+                                                                                                         self.rect.size)
         self.layer = layer.value
         self._observers = []
 
-    def create_plain_image(self):
-        return pygame.Surface(self.rect.size, pygame.SRCALPHA)
+    def create_plain_image(self, color):
+        surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        surface.fill(color)
+        return surface
 
     def update(self):
         self.rect.update(self.tile.get_rect())
         self.render_boarder()
-        self.render_image()
-
-    def render_image(self):
-        if self.use_plain_image:
-            self.image.fill(self.bg_color)
 
     def render_boarder(self):
+        if not self.show_boarder:
+            return
+        self.boarder_color = Color('red') if self.is_block else self.boarder_color
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
     def selected(self):
-        if self.use_plain_image:
-            self.bg_color = Color(0, 255, 0, 50)
+        self.image = self.create_plain_image(Color(0, 255, 0, 50))
 
     def unselected(self):
-        if self.use_plain_image:
-            self.bg_color = Color('white')
+        self.image = self.create_plain_image(Color(0, 0, 0, 0))
 
     def update_pos(self, tile: Tile):
         previous_tile = self.tile
@@ -137,23 +165,16 @@ class AnimatedUnit(Unit):
         self.speed_frame = frame_per_image
         self.current_animate_frame = 0
         self.images = images
+        self.show_boarder = False
 
-    def update(self):
-        super().update()
+    def render_image(self):
         self.current_animate_frame = (self.current_animate_frame + 1) % self.speed_frame
         if self.current_animate_frame == 0:
             self.images.append(self.images.pop(0))
             self.image = pygame.transform.scale(self.images[0], self.rect.size)
 
 
-class Terrain(Unit, ABC):
-    bg_color = Color('yellow')
-
-    def __init__(self, tile=Tile(x=0, y=0), image: pygame.surface.Surface = None, layer=UnitLayer.Terrain):
-        super().__init__(tile=tile, image=image, layer=layer)
-
-
-class Character(AnimatedUnit, ABC):
+class Character(AnimatedUnit):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
