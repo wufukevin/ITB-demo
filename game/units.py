@@ -4,12 +4,7 @@ from typing import Any, List
 import pygame
 from pygame import Color
 
-from config.loader import app_config
 from game.tile import Tile
-
-
-def manhattan_distance(x1, y1, x2, y2):
-    return abs(x1 - x2) + abs(y1 - y2)
 
 
 class UnitLayer(Enum):
@@ -160,20 +155,6 @@ class Character(AnimatedUnit):
 
     def unselected(self):
         self.bg_color = Color('blue')
-
-    def is_in_distance(self, x, y):
-        return manhattan_distance(self.tile.x, self.tile.y, x, y) <= self.move_distance
-
-    def move_range(self):
-        ranges = []
-        for i in range(-self.move_distance, self.move_distance + 1):
-            for j in range(-self.move_distance, self.move_distance + 1):
-                x = self.tile.x + i
-                y = self.tile.y + j
-                if 0 <= x < app_config.game.tiles.width and 0 <= y < app_config.game.tiles.height:
-                    if self.is_in_distance(x, y):
-                        ranges.append(Tile(x=x, y=y))
-        return ranges
 
     def on_hit(self, damage: int):
         self.current_health -= damage

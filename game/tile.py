@@ -1,4 +1,4 @@
-from typing import ClassVar, Self, List
+from typing import ClassVar, Self, List, Tuple
 
 import pygame
 from pydantic import BaseModel, field_validator
@@ -77,5 +77,16 @@ class Tile(BaseModel):
     def from_screen_coordinate(cls: Self, x: int, y: int) -> Self:
         return Tile(x=int(x / Tile.width), y=int(y / Tile.height))
 
+    def distance_to(self, tile: Self | Tuple[int, int]) -> int:
+        if isinstance(tile, tuple):
+            x, y = tile
+            return manhattan_distance(self.x, self.y, x, y)
+        else:
+            return manhattan_distance(self.x, self.y, tile.x, tile.y)
+
     def __hash__(self):
         return hash((self.x, self.y))
+
+
+def manhattan_distance(x1, y1, x2, y2):
+    return abs(x1 - x2) + abs(y1 - y2)
