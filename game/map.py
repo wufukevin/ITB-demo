@@ -6,8 +6,8 @@ import pygame
 
 from config.loader import app_config
 from game.factories import unit_factory, UnitType
-from game.units import UnitLayer, Unit
 from game.tile import Tile
+from game.units import UnitLayer, Unit
 
 
 class Map:
@@ -20,10 +20,10 @@ class Map:
         self.__units = defaultdict(list)
         self.__surface = surface
         self.__background = pygame.sprite.LayeredUpdates()
-        self.add(unit_factory(UnitType.BACKGROUND).generate(self.__background_tiles()))
+        self.add(unit_factory(UnitType.BACKGROUND).generate(self.__config_game_tiles()))
 
     @staticmethod
-    def __background_tiles() -> List[Tile]:
+    def __config_game_tiles() -> List[Tile]:
         return [Tile(x=x, y=y) for x in range(app_config.game.tiles.width) for y in range(app_config.game.tiles.height)]
 
     def __getitem__(self, game_coordinate: Tuple[int, int] | Tile) -> Unit:
@@ -37,21 +37,14 @@ class Map:
         return units[-1] if len(units) else None
 
     def show(self):
-        self.show_unit_groups(self.__background)
-
-    def show_unit_groups(self, unit_group: pygame.sprite.AbstractGroup):
-        unit_group.update()
-        unit_group.draw(self.__surface)
+        self.__background.update()
+        self.__background.draw(self.__surface)
 
     def add(self, units: Sequence[pygame.sprite], **kwargs):
         for unit in units:
             unit.subscribe(self)
-        self.__add_unit_cache(units)
-        self.__background.add(units, **kwargs)
-
-    def __add_unit_cache(self, units):
-        for unit in units:
             self.__units[unit.tile].append(unit)
+        self.__background.add(units, **kwargs)
 
     def mark_move_range(self, tiles: List[Tile]):
         move_ranges = unit_factory(UnitType.MOVE_RANGE).generate(tiles)
@@ -66,31 +59,27 @@ class Map:
     def remove(self, units: Sequence[pygame.sprite]):
         for unit in units:
             unit.unsubscribe(self)
-        self.__del_unit_cache(units)
+            self.__units[unit.tile].remove(unit)
         self.__background.remove(units)
 
-    def __del_unit_cache(self, units):
-        for unit in units:
-            self.__units[unit.tile].remove(unit)
-
-    def available_tiles_for_units(self) -> List[Tile]:
-        background_tiles = set(
+    def __available_config_game_tiles(self) -> List[Tile]:
+        config_game_tiles = set(
             [unit.tile for unit in self.__background if (UnitLayer(unit.layer) is UnitLayer.Background)])
         unit_tiles = set(
             [unit.tile for unit in self.__background if
              (UnitLayer(unit.layer) in UnitLayer.selectable_layers())])
-        return list(background_tiles.difference(unit_tiles))
+        return list(config_game_tiles.difference(unit_tiles))
 
     def generate_units(self, unit_type: UnitType):
-        generate_tiles = self.__pick_random_available_tiles(self.__unit_generate_count[unit_type])
+        generate_tiles = self.__pick_random_available_config_game_tiles(self.__unit_generate_count[unit_type])
         self.add(unit_factory(unit_type).generate(generate_tiles))
 
-    def __pick_random_available_tiles(self, tile_count: int) -> List[Tile]:
-        available_unit_tiles = self.available_tiles_for_units()
-        if len(available_unit_tiles) < tile_count:
+    def __pick_random_available_config_game_tiles(self, tile_count: int) -> List[Tile]:
+        available_config_game_tiles = self.__available_config_game_tiles()
+        if len(available_config_game_tiles) < tile_count:
             return []
-        random.shuffle(available_unit_tiles)
-        return available_unit_tiles[:tile_count]
+        random.shuffle(available_config_game_tiles)
+        return available_config_game_tiles[:tile_count]
 
     def reachable_tiles(self, start: Tile, move_distance: int):
         for x in range(start.x - move_distance, start.x + move_distance + 1):

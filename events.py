@@ -3,8 +3,8 @@ from enum import Enum
 import pygame
 
 from game.map import Map
-from game.units import Unit, Character
 from game.tile import Tile
+from game.units import Unit, Character
 
 
 class Situation(Enum):
