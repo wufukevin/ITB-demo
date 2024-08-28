@@ -190,7 +190,9 @@ class Character(AnimatedUnit):
                  move_distance=3):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
+        self.set_hp_position()
 
+    def set_hp_position(self):
         # 血條位置
         image_rect = self.image.get_rect()
         self.health_bar_x = 5
@@ -201,7 +203,6 @@ class Character(AnimatedUnit):
     def update(self):
         super().update()
         self.draw_health_bar()
-        pygame.display.flip()
         self.fps_count += 1
         if self.fps_count == self.move_fps:
             self.fps_count = 0
@@ -248,7 +249,7 @@ class Character(AnimatedUnit):
                         ranges.append(Tile(x=x, y=y))
         return ranges
 
-    def on_hit(self, damage=1):
+    def on_hit(self, damage: int):
         self.current_health -= damage
         if self.current_health <= 0:
             self.notify_death()

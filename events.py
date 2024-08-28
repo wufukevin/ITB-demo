@@ -73,13 +73,13 @@ class EventHandler:
             EventHandler.selected_unit = None
 
     class Attack(ClickEvent):
-        def __init__(self, unit: Unit, game_map: Map):
-            EventHandler.ClickEvent.__init__(self, unit.tile.x, unit.tile.y, game_map)
+        def __init__(self, unit: Unit, game_map: Map, tile: Tile):
+            EventHandler.ClickEvent.__init__(self, tile, game_map)
             self.unit = unit
 
         def execute(self):
             if type(self.unit) is Character:
-                self.unit.on_hit()
+                self.unit.on_hit(1)
 
     def click(self, game_map: Map):
         tile = Tile.from_screen_coordinate(*pygame.mouse.get_pos())
@@ -92,7 +92,7 @@ class EventHandler:
         if click_result:
             self.situation = Situation.SELECTED
             # click_event = EventHandler.Select(click_result, game_map)
-            click_event = EventHandler.Attack(click_result, game_map)
+            click_event = EventHandler.Attack(click_result, game_map, tile)
         else:
             if self.situation == Situation.SELECTED:
                 self.situation = Situation.MOVING
