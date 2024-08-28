@@ -100,10 +100,9 @@ class Character(AnimatedUnit):
     boarder_color = Color('black')
     is_block = True
     is_moving = False
-    move_fps = 30
-    fps_count = 0
+    frame_per_move = 10
+    current_move_frame = 0
     move_path = []
-    reachable_tiles_with_path = []
     max_health = 5
     current_health = max_health
 
@@ -116,17 +115,13 @@ class Character(AnimatedUnit):
     def set_hp_position(self):
         # 血條位置
         image_rect = self.image.get_rect()
-        self.health_bar_x = 5
-        self.health_bar_y = image_rect.bottom - 10
-        self.health_bar_width = image_rect.width - 10
-        self.health_bar_height = 5
+        self.health_bar_rect = pygame.Rect(5, image_rect.bottom - 10, image_rect.width - 10, 5)
 
     def update(self):
         super().update()
         self.draw_health_bar()
-        self.fps_count += 1
-        if self.fps_count == self.move_fps:
-            self.fps_count = 0
+        self.current_move_frame = (self.current_move_frame + 1) % self.frame_per_move
+        if self.current_move_frame == 0:
             if self.move_path:
                 self.update_pos(self.move_path.pop(0))
                 self.is_moving = True
@@ -134,28 +129,28 @@ class Character(AnimatedUnit):
                 self.is_moving = False
 
     def draw_health_bar(self):
-        pygame.draw.rect(self.image, (100, 100, 100),
-                         (self.health_bar_x, self.health_bar_y, self.health_bar_width, self.health_bar_height))
-        segment_width = self.health_bar_width / self.max_health
+        pygame.draw.rect(self.image, (100, 100, 100), self.health_bar_rect)
+        segment_width = self.health_bar_rect.width / self.max_health
         for i in range(self.current_health):
             pygame.draw.rect(self.image, (255, 0, 0),
-                             (self.health_bar_x + i * segment_width, self.health_bar_y,
-                              segment_width, self.health_bar_height))
-            pygame.draw.rect(self.image, self.boarder_color, (self.health_bar_x + i * segment_width, self.health_bar_y,
-                                                              segment_width, self.health_bar_height), 1)
-
-    def update_reachable_tiles_with_path(self, data):
-        self.reachable_tiles_with_path = data
+                             (self.health_bar_rect.x + i * segment_width, self.health_bar_rect.y,
+                              segment_width, self.health_bar_rect.height))
+            pygame.draw.rect(self.image, self.boarder_color,
+                             (self.health_bar_rect.x + i * segment_width, self.health_bar_rect.y,
+                              segment_width, self.health_bar_rect.height), 1)
 
     def update_move_path(self, path: list[Tile]):
         self.move_path = path
 
     def selected(self):
-        self.bg_color = Color('red')
+        # do nothing instead default behavior for now
+        pass
 
     def unselected(self):
-        self.bg_color = Color('blue')
+        # do nothing instead default behavior for now
+        pass
 
+    # TODO: consider MVC pattern
     def on_hit(self, damage: int):
         self.current_health -= damage
         if self.current_health <= 0:
