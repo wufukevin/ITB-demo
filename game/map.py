@@ -52,15 +52,18 @@ class Map:
         for unit in units:
             self.__units[unit.tile].append(unit)
 
-    def mark_move_range(self, tiles: List[Tile]):
-        move_ranges = unit_factory(UnitType.MOVE_RANGE).generate(tiles)
-        self.add(move_ranges)
-        for unit in move_ranges:
-            unit.selected()
+    def mark_action_range(self, tiles: List[Tile], is_move_mode: bool = False):
+        action_ranges = unit_factory(UnitType.MOVE_RANGE).generate(tiles)
+        self.add(action_ranges)
+        for unit in action_ranges:
+            if is_move_mode:
+                unit.selected_green()
+            else:
+                unit.selected_yellow()
 
-    def remove_move_range(self):
-        move_range = self.__background.get_sprites_from_layer(UnitLayer.MoveRange.value)
-        self.remove(move_range)
+    def remove_action_range(self):
+        action_range = self.__background.get_sprites_from_layer(UnitLayer.MoveRange.value)
+        self.remove(action_range)
 
     def remove(self, units: Sequence[pygame.sprite]):
         for unit in units:

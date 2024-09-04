@@ -136,8 +136,11 @@ class Unit(pygame.sprite.Sprite):
         self.boarder_color = Color('red') if self.is_block else self.boarder_color
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
-    def selected(self):
+    def selected_green(self):
         self.image = self.create_plain_image(Color(0, 255, 0, 50))
+
+    def selected_yellow(self):
+        self.image = self.create_plain_image(Color(255, 255, 0, 50))
 
     def unselected(self):
         self.image = self.create_plain_image(Color(0, 0, 0, 0))
@@ -174,6 +177,11 @@ class AnimatedUnit(Unit):
             self.image = pygame.transform.scale(self.images[0], self.rect.size)
 
 
+class Action_Mode(Enum):
+    MOVE = 1
+    ATTACK_01 = 2
+
+
 class Character(AnimatedUnit):
     bg_color = Color('blue')
     boarder_color = Color('black')
@@ -185,12 +193,16 @@ class Character(AnimatedUnit):
     reachable_tiles_with_path = []
     max_health = 5
     current_health = max_health
+    action_mode = Action_Mode.MOVE
+    is_attacked = False
+    attack_damage = 1
 
     def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
-                 move_distance=3):
+                 move_distance=3, attack_distance=1):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
         self.set_hp_position()
+        self.attack_distance = attack_distance
 
     def set_hp_position(self):
         # 血條位置
@@ -257,3 +269,28 @@ class Character(AnimatedUnit):
     def notify_death(self):
         for observer in self._observers:
             observer.remove([self])
+
+    def action_distance(self):
+        if self.action_mode == Action_Mode.MOVE:
+            return self.move_distance
+        elif self.action_mode == Action_Mode.ATTACK_01:
+            return self.attack_distance
+        else:
+            return 0
+
+    def change_move_mode(self):
+        if self.action_mode == Action_Mode.MOVE:
+            self.action_mode = Action_Mode.ATTACK_01
+        else:
+            self.action_mode = Action_Mode.MOVE
+
+    def action_distance(self):
+        if self.action_mode == Action_Mode.MOVE:
+            return self.move_distance
+        elif self.action_mode == Action_Mode.ATTACK_01:
+            return self.attack_distance
+        else:
+            return 0
+
+    def is_move_mode(self) -> bool:
+        return self.action_mode == Action_Mode.MOVE
