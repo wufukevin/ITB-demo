@@ -1,10 +1,11 @@
 from enum import Enum
-from typing import Any, List
+from typing import Any, List, TYPE_CHECKING
 
 import pygame
-from pygame import Color
+from pygame import Color, Rect
 
-from game.tile import Tile
+if TYPE_CHECKING:
+    from game.tile import Tile
 
 
 class UnitLayer(Enum):
@@ -23,11 +24,11 @@ class Unit(pygame.sprite.Sprite):
     _observers: List[Any]
     bg_color: Color = Color('white')
     boarder_color: Color = Color('black')
-    is_block = False
-    is_destroyable = False
-    show_boarder = True
+    is_block: bool = False
+    is_destroyable: bool = False
+    show_boarder: bool = True
 
-    def __init__(self, tile: Tile, image: pygame.surface.Surface = None, layer: UnitLayer = UnitLayer.Background,
+    def __init__(self, tile: 'Tile', image: pygame.surface.Surface = None, layer: 'UnitLayer' = UnitLayer.Background,
                  **kwargs):
         pygame.sprite.Sprite.__init__(self)
 
@@ -35,14 +36,15 @@ class Unit(pygame.sprite.Sprite):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        self.tile = tile
-        self.rect = self.tile.get_rect()
-        self.image = self.create_plain_image(self.bg_color) if image is None else pygame.transform.scale(image,
-                                                                                                         self.rect.size)
-        self.layer = layer.value
+        self.tile: 'Tile' = tile
+        self.rect: Rect = self.tile.get_rect()
+        self.image: pygame.surface.Surface = self.create_plain_image(
+            self.bg_color) if image is None else pygame.transform.scale(image,
+                                                                        self.rect.size)
+        self.layer: 'UnitLayer' = layer.value
         self._observers = []
 
-    def create_plain_image(self, color):
+    def create_plain_image(self, color: Color) -> pygame.surface.Surface:
         surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         surface.fill(color)
         return surface
@@ -63,7 +65,7 @@ class Unit(pygame.sprite.Sprite):
     def unselected(self):
         self.image = self.create_plain_image(Color(0, 0, 0, 0))
 
-    def update_pos(self, tile: Tile):
+    def update_pos(self, tile: 'Tile'):
         previous_tile = self.tile
         self.tile = tile
         self.notify(previous_tile, tile)
@@ -74,18 +76,18 @@ class Unit(pygame.sprite.Sprite):
     def unsubscribe(self, observer: Any):
         self._observers.remove(observer)
 
-    def notify(self, previous: Tile, current: Tile):
+    def notify(self, previous: 'Tile', current: 'Tile'):
         for observer in self._observers:
             observer.update(self, previous, current)
 
 
 class AnimatedUnit(Unit):
-    def __init__(self, tile: Tile, images: List[pygame.surface.Surface], layer: UnitLayer = UnitLayer.Background,
+    def __init__(self, tile: 'Tile', images: List[pygame.surface.Surface], layer: 'UnitLayer' = UnitLayer.Background,
                  frame_per_image=10):
         super().__init__(tile=tile, image=images[0], layer=layer)
-        self.speed_frame = frame_per_image
-        self.current_animate_frame = 0
-        self.images = images
+        self.speed_frame: int = frame_per_image
+        self.current_animate_frame: int = 0
+        self.images: List[pygame.surface.Surface] = images
         self.show_boarder = False
 
     def render_image(self):
@@ -102,20 +104,21 @@ class Character(AnimatedUnit):
     is_moving = False
     frame_per_move = 10
     current_move_frame = 0
-    move_path = []
-    max_health = 5
-    current_health = max_health
+    move_path: List['Tile'] = []
+    max_health: int = 5
+    current_health: int = max_health
 
-    def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
-                 move_distance=3):
+    def __init__(self, tile: 'Tile', images: List[pygame.surface.Surface] = None,
+                 frame_per_image: int = 10,
+                 move_distance: int = 3):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
-        self.move_distance = move_distance
+        self.move_distance: int = move_distance
         self.set_hp_position()
 
     def set_hp_position(self):
         # 血條位置
         image_rect = self.image.get_rect()
-        self.health_bar_rect = pygame.Rect(5, image_rect.bottom - 10, image_rect.width - 10, 5)
+        self.health_bar_rect: Rect = pygame.Rect(5, image_rect.bottom - 10, image_rect.width - 10, 5)
 
     def update(self):
         super().update()
@@ -139,7 +142,7 @@ class Character(AnimatedUnit):
                              (self.health_bar_rect.x + i * segment_width, self.health_bar_rect.y,
                               segment_width, self.health_bar_rect.height), 1)
 
-    def update_move_path(self, path: list[Tile]):
+    def update_move_path(self, path: list['Tile']):
         self.move_path = path
 
     def selected(self):
