@@ -12,6 +12,12 @@ class Situation(Enum):
     SELECTED_TO_ATTACK = 3
 
 
+def reset_situation():
+    EventHandler.situation = Situation.NOTHING
+    EventHandler.selected_unit.reset_action()
+    EventHandler.selected_unit = None
+
+
 class EventHandler:
     _instance = None
     situation = Situation.NOTHING
@@ -57,7 +63,7 @@ class EventHandler:
             EventHandler.selected_unit = self.unit
 
             if type(EventHandler.selected_unit) is Character and not EventHandler.selected_unit.is_moving:
-                reachable_tiles = self.game_map.reachable_tiles(self.unit.tile, self.unit.action_distance())
+                reachable_tiles = self.unit.current_action().reachable_tiles(self.unit.tile, self.game_map)
                 EventHandler.action_range = [tile for tile in reachable_tiles]
                 self.game_map.mark_action_range(EventHandler.action_range, EventHandler.selected_unit.is_move_mode())
 
@@ -69,14 +75,13 @@ class EventHandler:
             selected_unit = EventHandler.selected_unit
             selected_unit.unselected()
             if type(selected_unit) is Character:
-                reachable_tiles_with_path = self.game_map.find_path(selected_unit.tile,
-                                                                    selected_unit.move_distance)
+                reachable_tiles_with_path = selected_unit.move_action.find_path(selected_unit.tile,
+                                                                                self.game_map)
                 for data in reachable_tiles_with_path:
                     if data[0] == self.tile:
                         selected_unit.update_move_path(data[1])
             self.game_map.remove_action_range()
-            EventHandler.situation = Situation.NOTHING
-            EventHandler.selected_unit = None
+            reset_situation()
 
     class Attack(ClickEvent):
         def __init__(self, unit: Unit, game_map: Map):
@@ -88,14 +93,13 @@ class EventHandler:
             selected_unit.unselected()
 
             if type(selected_unit) is Character:
-                reachable_tiles = self.game_map.reachable_tiles(selected_unit.tile, selected_unit.action_distance())
+                reachable_tiles = EventHandler.selected_unit.attack_action.reachable_tiles(selected_unit.tile, self.game_map)
                 for tile in reachable_tiles:
                     if tile == self.unit.tile:
                         self.unit.on_hit(EventHandler.selected_unit.attack_damage)
 
                 self.game_map.remove_action_range()
-                EventHandler.situation = Situation.NOTHING
-                EventHandler.selected_unit = None
+                reset_situation()
 
     def click(self, game_map: Map):
         tile = Tile.from_screen_coordinate(*pygame.mouse.get_pos())

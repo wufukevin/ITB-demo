@@ -6,6 +6,8 @@ from pydantic import BaseModel, field_validator
 from pygame import Color, Rect
 
 from config.loader import app_config
+from game.action import Move, LineAttack, RangeAttack
+import random
 
 
 def manhattan_distance(x1, y1, x2, y2):
@@ -198,11 +200,14 @@ class Character(AnimatedUnit):
     attack_damage = 1
 
     def __init__(self, tile=Tile(x=0, y=0), images: List[pygame.surface.Surface] = None, frame_per_image=10,
-                 move_distance=3, attack_distance=1):
+                 move_distance=3, attack_distance=2):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance = move_distance
         self.set_hp_position()
         self.attack_distance = attack_distance
+        self.move_action = Move(move_distance)
+        # set attack mode randomly
+        self.attack_action = random.choice([LineAttack(attack_distance), RangeAttack(attack_distance)])
 
     def set_hp_position(self):
         # 血條位置
@@ -284,13 +289,16 @@ class Character(AnimatedUnit):
         else:
             self.action_mode = Action_Mode.MOVE
 
-    def action_distance(self):
+    def current_action(self):
         if self.action_mode == Action_Mode.MOVE:
-            return self.move_distance
+            return self.move_action
         elif self.action_mode == Action_Mode.ATTACK_01:
-            return self.attack_distance
+            return self.attack_action
         else:
-            return 0
+            return None
 
     def is_move_mode(self) -> bool:
         return self.action_mode == Action_Mode.MOVE
+
+    def reset_action(self):
+        self.action_mode = Action_Mode.MOVE

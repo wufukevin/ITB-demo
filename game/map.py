@@ -94,40 +94,6 @@ class Map:
         random.shuffle(available_unit_tiles)
         return available_unit_tiles[:tile_count]
 
-    def reachable_tiles(self, start: Tile, move_distance: int):
-        for x in range(start.x - move_distance, start.x + move_distance + 1):
-            if x < 0 or x >= app_config.game.tiles.width:
-                continue
-            for y in range(start.y - move_distance, start.y + move_distance + 1):
-                if y < 0 or y >= app_config.game.tiles.height:
-                    continue
-                if abs(x - start.x) + abs(y - start.y) > move_distance:
-                    continue
-                unit = self[(x, y)]
-                if unit is None or not unit.is_block:
-                    yield Tile(x=x, y=y)
-
-    def find_path(self, tile: Tile, move_distance: int):
-        queue = deque([(tile, 0, [tile])])
-        visited = {tile}
-        reachable_tiles = list()
-
-        while queue:
-            current_tile, distance, path = queue.popleft()
-
-            if distance <= move_distance:
-                reachable_tiles.append((current_tile, path))
-
-            if distance < move_distance:
-                for neighbor in current_tile.neighbor_tiles:
-                    unit = self[neighbor]
-                    if neighbor in visited:
-                        continue
-                    if unit is None or not unit.is_block:
-                        queue.append((neighbor, distance + 1, path + [neighbor]))
-                        visited.add(neighbor)
-        return reachable_tiles
-
     def update(self, subject: Any, previous: Tile, current: Tile):
         self.__units[previous].remove(subject)
         self.__units[current].append(subject)
