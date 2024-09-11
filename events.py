@@ -1,10 +1,14 @@
 from enum import Enum
+from typing import TYPE_CHECKING
 
 import pygame
 
-from game.map import Map
 from game.tile import Tile
-from game.units import Unit, Character
+from game.units import Character
+
+if TYPE_CHECKING:
+    from game.units import Unit
+    from game.map import Map
 
 
 class ClickMode(Enum):
@@ -27,7 +31,7 @@ class EventHandler:
         pass
 
     class ClickEvent:
-        def __init__(self, tile: Tile, game_map: Map):
+        def __init__(self, tile: 'Tile', game_map: 'Map'):
             self.tile = tile
             self.game_map = game_map
 
@@ -36,7 +40,7 @@ class EventHandler:
             pass
 
     class Select(ClickEvent):
-        def __init__(self, unit: Unit, game_map: Map):
+        def __init__(self, unit: 'Unit', game_map: 'Map'):
             EventHandler.ClickEvent.__init__(self, unit.tile, game_map)
             self.unit = unit
 
@@ -57,7 +61,7 @@ class EventHandler:
                 self.game_map.mark_move_range(reachable_tiles)
 
     class Move(ClickEvent):
-        def __init__(self, tile: Tile, game_map: Map):
+        def __init__(self, tile: 'Tile', game_map: 'Map'):
             EventHandler.ClickEvent.__init__(self, tile, game_map)
 
         def execute(self):
@@ -74,7 +78,7 @@ class EventHandler:
             EventHandler.selected_unit = None
 
     class Attack(ClickEvent):
-        def __init__(self, unit: Unit, game_map: Map, tile: Tile):
+        def __init__(self, unit: 'Unit', game_map: 'Map', tile: 'Tile'):
             EventHandler.ClickEvent.__init__(self, tile, game_map)
             self.unit = unit
 
@@ -82,18 +86,18 @@ class EventHandler:
             if type(self.unit) is Character:
                 self.unit.on_hit(1)
 
-    def click(self, game_map: Map):
+    def click(self, game_map: 'Map'):
         tile = Tile.from_screen_coordinate(*pygame.mouse.get_pos())
         click_event = self.get_click_event(game_map, tile)
         click_event.execute()
 
-    def get_click_event(self, game_map: Map, tile: Tile):
+    def get_click_event(self, game_map: 'Map', tile: 'Tile'):
         click_event = EventHandler.ClickEvent(tile, game_map)
         clicked_unit = game_map[tile]
         if clicked_unit:
             self.click_mode = ClickMode.SELECTED
-            # click_event = EventHandler.Select(clicked_unit, game_map)
-            click_event = EventHandler.Attack(clicked_unit, game_map, tile)
+            click_event = EventHandler.Select(clicked_unit, game_map)
+            # click_event = EventHandler.Attack(clicked_unit, game_map, tile)
         else:
             if self.click_mode == ClickMode.SELECTED:
                 self.click_mode = ClickMode.MOVING

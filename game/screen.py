@@ -1,12 +1,15 @@
+from typing import TYPE_CHECKING
+
 import pygame
 from pygame import Color
 
-from config.loader import AppConfig
+if TYPE_CHECKING:
+    from config.loader import AppConfig
 
 
 class Screen:
 
-    def __init__(self, app_config: AppConfig):
+    def __init__(self, app_config: 'AppConfig'):
         pygame.init()
         self.screen = app_config.app.screen
         self.fps = app_config.app.game.fps

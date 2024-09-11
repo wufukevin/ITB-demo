@@ -1,19 +1,22 @@
 import random
 from collections import defaultdict, deque
-from typing import Sequence, Tuple, List, Any
+from typing import Sequence, Tuple, List, Any, Dict, Generator, TYPE_CHECKING
 
 import pygame
 
 from config.loader import app_config
 from game.factories import unit_factory, UnitType
 from game.tile import Tile
-from game.units import UnitLayer, Unit
+from game.units import UnitLayer
+
+if TYPE_CHECKING:
+    from game.units import Unit
 
 
 class Map:
 
     def __init__(self, surface: pygame.Surface):
-        self.__unit_generate_count = {
+        self.__unit_generate_count: Dict['UnitType', int] = {
             UnitType.CHARACTER: app_config.game.character,
             UnitType.BLOCKER: app_config.game.terrain,
         }
@@ -23,10 +26,10 @@ class Map:
         self.add(unit_factory(UnitType.BACKGROUND).generate(self.__config_game_tiles()))
 
     @staticmethod
-    def __config_game_tiles() -> List[Tile]:
+    def __config_game_tiles() -> List['Tile']:
         return [Tile(x=x, y=y) for x in range(app_config.game.tiles.width) for y in range(app_config.game.tiles.height)]
 
-    def __getitem__(self, game_coordinate: Tuple[int, int] | Tile) -> Unit:
+    def __getitem__(self, game_coordinate: Tuple[int, int] | 'Tile') -> 'Unit':
         if not isinstance(game_coordinate, Tile):
             x, y = game_coordinate
             tile = Tile(x=x, y=y)
@@ -46,7 +49,7 @@ class Map:
             self.__units[unit.tile].append(unit)
         self.__background.add(units, **kwargs)
 
-    def mark_move_range(self, tiles: List[Tile]):
+    def mark_move_range(self, tiles: List['Tile']):
         move_ranges = unit_factory(UnitType.MOVE_RANGE).generate(tiles)
         self.add(move_ranges)
         for unit in move_ranges:
@@ -62,7 +65,7 @@ class Map:
             self.__units[unit.tile].remove(unit)
         self.__background.remove(units)
 
-    def __available_config_game_tiles(self) -> List[Tile]:
+    def __available_config_game_tiles(self) -> List['Tile']:
         config_game_tiles = set(
             [unit.tile for unit in self.__background if (UnitLayer(unit.layer) is UnitLayer.Background)])
         unit_tiles = set(
@@ -70,18 +73,18 @@ class Map:
              (UnitLayer(unit.layer) in UnitLayer.selectable_layers())])
         return list(config_game_tiles.difference(unit_tiles))
 
-    def generate_units(self, unit_type: UnitType):
+    def generate_units(self, unit_type: 'UnitType'):
         generate_tiles = self.__pick_random_available_config_game_tiles(self.__unit_generate_count[unit_type])
         self.add(unit_factory(unit_type).generate(generate_tiles))
 
-    def __pick_random_available_config_game_tiles(self, tile_count: int) -> List[Tile]:
+    def __pick_random_available_config_game_tiles(self, tile_count: int) -> List['Tile']:
         available_config_game_tiles = self.__available_config_game_tiles()
         if len(available_config_game_tiles) < tile_count:
             return []
         random.shuffle(available_config_game_tiles)
         return available_config_game_tiles[:tile_count]
 
-    def reachable_tiles(self, start: Tile, move_distance: int):
+    def reachable_tiles(self, start: 'Tile', move_distance: int) -> Generator['Tile', None, None]:
         for x in range(start.x - move_distance, start.x + move_distance + 1):
             if x < 0 or x >= app_config.game.tiles.width:
                 continue
@@ -94,7 +97,7 @@ class Map:
                 if unit is None or not unit.is_block:
                     yield Tile(x=x, y=y)
 
-    def find_path(self, tile: Tile, move_distance: int):
+    def find_path(self, tile: 'Tile', move_distance: int) -> List[Tuple['Tile', List['Tile']]]:
         queue = deque([(tile, 0, [tile])])
         visited = {tile}
         reachable_tiles = list()
@@ -115,6 +118,6 @@ class Map:
                         visited.add(neighbor)
         return reachable_tiles
 
-    def update(self, subject: Any, previous: Tile, current: Tile):
+    def update(self, subject: Any, previous: 'Tile', current: 'Tile'):
         self.__units[previous].remove(subject)
         self.__units[current].append(subject)
