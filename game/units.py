@@ -4,8 +4,9 @@ from typing import Any, List, TYPE_CHECKING
 import pygame
 from pygame import Color, Rect
 
-if TYPE_CHECKING:
-    from game.tile import Tile
+from config.loader import app_config
+from game.action import Move, LineAttack, RangeAttack
+import random
 
 
 class UnitLayer(Enum):
@@ -59,8 +60,11 @@ class Unit(pygame.sprite.Sprite):
         self.boarder_color = Color('red') if self.is_block else self.boarder_color
         pygame.draw.rect(self.image, self.boarder_color, self.image.get_rect(), 1)
 
-    def selected(self):
+    def selected_green(self):
         self.image = self.create_plain_image(Color(0, 255, 0, 50))
+
+    def selected_yellow(self):
+        self.image = self.create_plain_image(Color(255, 255, 0, 50))
 
     def unselected(self):
         self.image = self.create_plain_image(Color(0, 0, 0, 0))
@@ -97,23 +101,35 @@ class AnimatedUnit(Unit):
             self.image = pygame.transform.scale(self.images[0], self.rect.size)
 
 
+class Action_Mode(Enum):
+    MOVE = 1
+    ATTACK_01 = 2
+
+
 class Character(AnimatedUnit):
     bg_color = Color('blue')
     boarder_color = Color('black')
     is_block = True
     is_moving = False
-    frame_per_move = 10
-    current_move_frame = 0
-    move_path: List['Tile'] = []
-    max_health: int = 5
-    current_health: int = max_health
+    move_fps = 30
+    fps_count = 0
+    move_path = []
+    reachable_tiles_with_path = []
+    max_health = 5
+    current_health = max_health
+    action_mode = Action_Mode.MOVE
+    is_attacked = False
+    attack_damage = 1
 
-    def __init__(self, tile: 'Tile', images: List[pygame.surface.Surface] = None,
-                 frame_per_image: int = 10,
-                 move_distance: int = 3):
+    def __init__(self, tile='Tile', images: List[pygame.surface.Surface] = None, frame_per_image=10,
+                 move_distance=3, attack_distance=2):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance: int = move_distance
         self.set_hp_position()
+        self.attack_distance = attack_distance
+        self.move_action = Move(move_distance)
+        # set attack mode randomly
+        self.attack_action = random.choice([LineAttack(attack_distance), RangeAttack(attack_distance)])
 
     def set_hp_position(self):
         # 血條位置
@@ -123,8 +139,8 @@ class Character(AnimatedUnit):
     def update(self):
         super().update()
         self.draw_health_bar()
-        self.current_move_frame = (self.current_move_frame + 1) % self.frame_per_move
-        if self.current_move_frame == 0:
+        self.current_animate_frame = (self.current_animate_frame + 1) % self.speed_frame
+        if self.current_animate_frame == 0:
             if self.move_path:
                 self.update_pos(self.move_path.pop(0))
                 self.is_moving = True
@@ -162,3 +178,31 @@ class Character(AnimatedUnit):
     def notify_death(self):
         for observer in self._observers:
             observer.remove([self])
+
+    def action_distance(self):
+        if self.action_mode == Action_Mode.MOVE:
+            return self.move_distance
+        elif self.action_mode == Action_Mode.ATTACK_01:
+            return self.attack_distance
+        else:
+            return 0
+
+    def change_move_mode(self):
+        if self.action_mode == Action_Mode.MOVE:
+            self.action_mode = Action_Mode.ATTACK_01
+        else:
+            self.action_mode = Action_Mode.MOVE
+
+    def current_action(self):
+        if self.action_mode == Action_Mode.MOVE:
+            return self.move_action
+        elif self.action_mode == Action_Mode.ATTACK_01:
+            return self.attack_action
+        else:
+            return None
+
+    def is_move_mode(self) -> bool:
+        return self.action_mode == Action_Mode.MOVE
+
+    def reset_action(self):
+        self.action_mode = Action_Mode.MOVE
