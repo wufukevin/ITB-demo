@@ -1,7 +1,11 @@
 from collections import deque
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from config.loader import app_config
+
+if TYPE_CHECKING:
+    from game.tile import Tile
 
 
 class Action:
@@ -19,7 +23,7 @@ class Move(Action):
         self.distance = distance
 
     def reachable_tiles(self, start: 'Tile', map: 'Map'):
-        from game.units import Tile
+        from game.tile import Tile
         for x in range(start.x - self.distance, start.x + self.distance + 1):
             if x < 0 or x >= app_config.game.tiles.width:
                 continue
@@ -60,7 +64,7 @@ class RangeAttack(Action):
         self.distance = distance
 
     def reachable_tiles(self, start: 'Tile', map: 'Map'):
-        from game.units import Tile
+        from game.tile import Tile
         for x in range(start.x - self.distance, start.x + self.distance + 1):
             if x < 0 or x >= app_config.game.tiles.width:
                 continue
@@ -78,7 +82,7 @@ class LineAttack(Action):
         self.distance = distance
 
     def reachable_tiles(self, start: 'Tile', map: 'Map'):
-        from game.units import Tile
+        from game.tile import Tile
         for x in range(start.x - self.distance, start.x + self.distance + 1):
             if x < 0 or x >= app_config.game.tiles.width:
                 continue

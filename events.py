@@ -1,9 +1,14 @@
 from enum import Enum
+from typing import TYPE_CHECKING
 
 import pygame
 
-from game.map import Map
-from game.units import Unit, Character, Tile
+from game.tile import Tile
+from game.units import Character
+
+if TYPE_CHECKING:
+    from game.units import Unit
+    from game.map import Map
 
 
 class Situation(Enum):
@@ -33,16 +38,16 @@ class EventHandler:
         pass
 
     class ClickEvent:
-        def __init__(self, tile: Tile, game_map: Map):
+        def __init__(self, tile: 'Tile', game_map: 'Map'):
             self.tile = tile
             self.game_map = game_map
 
         @classmethod
-        def execute(self):
+        def execute(cls):
             pass
 
     class Select(ClickEvent):
-        def __init__(self, unit: Unit, game_map: Map):
+        def __init__(self, unit: 'Unit', game_map: 'Map'):
             EventHandler.ClickEvent.__init__(self, unit.tile, game_map)
             self.unit = unit
 
@@ -68,7 +73,7 @@ class EventHandler:
                 self.game_map.mark_action_range(EventHandler.action_range, EventHandler.selected_unit.is_move_mode())
 
     class Move(ClickEvent):
-        def __init__(self, tile: Tile, game_map: Map):
+        def __init__(self, tile: 'Tile', game_map: 'Map'):
             EventHandler.ClickEvent.__init__(self, tile, game_map)
 
         def execute(self):
@@ -84,8 +89,8 @@ class EventHandler:
             reset_situation()
 
     class Attack(ClickEvent):
-        def __init__(self, unit: Unit, game_map: Map):
-            EventHandler.ClickEvent.__init__(self, unit.tile, game_map)
+        def __init__(self, unit: 'Unit', game_map: 'Map', tile: 'Tile'):
+            EventHandler.ClickEvent.__init__(self, tile, game_map)
             self.unit = unit
 
         def execute(self):
@@ -93,7 +98,8 @@ class EventHandler:
             selected_unit.unselected()
 
             if type(selected_unit) is Character:
-                reachable_tiles = EventHandler.selected_unit.attack_action.reachable_tiles(selected_unit.tile, self.game_map)
+                reachable_tiles = EventHandler.selected_unit.attack_action.reachable_tiles(selected_unit.tile,
+                                                                                           self.game_map)
                 for tile in reachable_tiles:
                     if tile == self.unit.tile:
                         self.unit.on_hit(EventHandler.selected_unit.attack_damage)
@@ -101,7 +107,7 @@ class EventHandler:
                 self.game_map.remove_action_range()
                 reset_situation()
 
-    def click(self, game_map: Map):
+    def click(self, game_map: 'Map'):
         tile = Tile.from_screen_coordinate(*pygame.mouse.get_pos())
         click_event = self.get_click_event(game_map, tile)
         click_event.execute()
@@ -109,7 +115,7 @@ class EventHandler:
     def is_repeat_selected(self, tile: Tile):
         return self.selected_unit and self.selected_unit.tile == tile
 
-    def get_click_event(self, game_map: Map, tile: Tile):
+    def get_click_event(self, game_map: 'Map', tile: 'Tile'):
         click_event = EventHandler.ClickEvent(tile, game_map)
         click_result = game_map[tile]
         if EventHandler.situation == Situation.NOTHING:
@@ -128,7 +134,7 @@ class EventHandler:
                     EventHandler.situation = Situation.SELECTED_TO_MOVE
                     click_event = EventHandler.Select(click_result, game_map)
                 else:
-                    click_event = EventHandler.Attack(click_result, game_map)
+                    click_event = EventHandler.Attack(click_result, game_map, tile)
         else:
             pass
         return click_event
