@@ -6,7 +6,20 @@ from typing import List, TYPE_CHECKING
 from pygame import Color
 
 from game.units import Unit, Character, UnitLayer
-from resource.loader import ImageLoader, background_images, character_images
+
+# Import from project root to avoid conflict with built-in resource module  
+import importlib.util
+import os
+spec = importlib.util.spec_from_file_location(
+    "resource.loader", 
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "resource", "loader.py")
+)
+resource_loader = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(resource_loader)
+
+ImageLoader = resource_loader.ImageLoader
+background_images = resource_loader.background_images
+character_images = resource_loader.character_images
 
 if TYPE_CHECKING:
     from game.tile import Tile

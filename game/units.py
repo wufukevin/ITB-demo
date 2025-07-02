@@ -113,6 +113,7 @@ class Character(AnimatedUnit):
                  move_distance: int = 3):
         super().__init__(tile=tile, images=images, layer=UnitLayer.Character, frame_per_image=frame_per_image)
         self.move_distance: int = move_distance
+        self.has_acted_this_round: bool = False
         self.set_hp_position()
 
     def set_hp_position(self):
@@ -162,3 +163,6 @@ class Character(AnimatedUnit):
     def notify_death(self):
         for observer in self._observers:
             observer.remove([self])
+
+    def reset_round_state(self):
+        self.has_acted_this_round = False
